@@ -119,6 +119,7 @@ byte lightTimeMinutesEnd[4] = {0,0,0,0};
 
 int tempC;
 int temp;
+int count = 0;
 
 int battfill;
 unsigned long battcheck = 10000; // the amount of time between voltage check and battery icon refresh
@@ -229,17 +230,22 @@ void setup(void) {
   DS3231.squareWave(SQWAVE_1_HZ);
   DS3231.read(n_tme);
   dallasSensors.begin();
-  if (!dallasSensors.getAddress(sensorAddress, 0)) Serial.println("Не можем найти первое устройство");
+  if (!dallasSensors.getAddress(sensorAddress, 0)) {
+    Serial.println("Не можем найти первое устройство");
+  }
   dallasSensors.setResolution(sensorAddress, 12);
   //beep(100);
   printDate(n_tme.Day, n_tme.Month, n_tme.Year, WHITE);
   tft.print("    MFA 0.1 Alpha");
+  printInitialTime();
+  printTemperature(sensorAddress);      
+ 
+}
+
+void printInitialTime(){
   TextSecond(n_tme.Second, WHITE);
   TextMinute(n_tme.Minute, WHITE);
-  TextHour(n_tme.Hour, WHITE);
-
-  tempC = printTemperature(sensorAddress, temp);      
-  temp = tempC;
+  TextHour(n_tme.Hour, WHITE);  
 }
 
 void printTime(){
@@ -259,7 +265,6 @@ void printTime(){
       if(diff==0){
         TextSecond(o_tme.Second, BLACK);
         TextSecond(n_tme.Second, WHITE);
-
       } else {
         int diff_o = o_tme.Second - o_tme.Second/10*10;
         TextSecondLo(diff_o, BLACK);
@@ -292,8 +297,7 @@ void loop() {
 
   dallasSensors.requestTemperatures();
 
-  tempC = printTemperature(sensorAddress, temp);      
-  temp = tempC;
+  printTemperature(sensorAddress);      
 
   // we have some minimum pressure we consider 'valid'
   // pressure of 0 means no pressing!
@@ -447,6 +451,7 @@ void loop() {
       }
       if (page == 1) {
         showLineSchedule();
+        printInitialTime();
       }
       if (page == 0) {
         page = 6;
@@ -477,6 +482,7 @@ void loop() {
         
         clearSchedule(); // erase all the drawings on the settings page
         resetTest();
+        printInitialTime();
       }
       if (page == 0) { // if you are already on the home page
         drawhomeiconred(); // draw the home icon red
@@ -605,22 +611,32 @@ void beep(int beep_time) {
 }
 
 // Вспомогательная функция печати значения температуры для устрйоства
-int printTemperature(DeviceAddress deviceAddress, int oldTemp){
-  int tempC = (int)dallasSensors.getTempC(deviceAddress);
-  if(tempC!=oldTemp){
-    printMessageLeft(String(tempC)+"C", BLUE);
-    tft.drawCircle(35, 210, 2, BLUE);
+int printTemperature(DeviceAddress deviceAddress){
+  
+  if(count % 100==0){
+    if (temp!=tempC){
+      printMessageLeft(String(temp/100)+"C", BLUE);
+      tft.drawCircle(35, 210, 2, BLUE);
+      tempC=temp;
+    }
+    temp=0;
+    count=0;
   }
-  return tempC;
+  int tC = (int)dallasSensors.getTempC(deviceAddress);
+  if(tC>-126){
+    count++;
+    temp+=tC;
+  }
 }
 
 // Print Date in format YYYY-MM-DD
 void printDate(int d, int m, int y, int color)
 {
   String date = String(y+1970)+"-"+conv_num2char(m)+"-"+conv_num2char(d);
-  tft.fillRect(0, 0, 100, 10, JJCOLOR);
+  tft.fillRect(0, 0, 80, 10, JJCOLOR);
   tft.setCursor(1, 1);
   tft.setTextSize(1);
+  tft.setTextColor(color);
   tft.print(date);
 }
 
