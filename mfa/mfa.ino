@@ -1,10 +1,15 @@
 //***THIS IS THE NEW VERSION THAT WORKS WITH THE NEW LIBRARIES!!!***
 // TFTLCD.h and TouchScreen.h are from adafruit.com where you can also purchase a really nice 2.8" TFT with touchscreen :)
-// 2012 Jeremy Saglimbeni - thecustomgeek.com
+// 2019 Vadym Vikulin - vadym.vikulin@gmail.com
 #include <Adafruit_GFX.h>    // Core graphics library
 #include <TFTLCD.h> // Hardware-specific library
 #include <TouchScreen.h>
 #include <EEPROM.h>
+#include <DS3232RTC.h>
+#include <Wire.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include "struct.h"
 
 // These are the pins for the shield!
 #define YP A3  // must be an analog pin, use "An" notation!
@@ -15,6 +20,7 @@
 #define MINPRESSURE 10
 #define MAXPRESSURE 1000
 
+#define PIN_DS18B20 40
 #define PIN_PH_SENSOR A8
 
 /*
@@ -33,6 +39,8 @@
 // For better pressure precision, we need to know the resistance
 // between X+ and X- Use any multimeter to read it
 // For the one we're using, its 300 ohms across the X plate
+#define TME tmElements_t
+
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
 #define PIN_BUZZER 38
@@ -56,6 +64,18 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 #define LCD_RESET A4 // Can alternately just connect to Arduino's reset pin
 
 Adafruit_TFTLCD tft(LCD_CS, LCD_CD, LCD_WR, LCD_RD, LCD_RESET);
+
+DS3232RTC DS3231;
+
+// Создаем объект OneWire
+OneWire oneWire(PIN_DS18B20);
+// Создаем объект DallasTemperature для работы с сенсорами, передавая ему ссылку на объект для работы с 1-Wire.
+DallasTemperature dallasSensors(&oneWire);
+DeviceAddress sensorAddress;
+
+TME o_tme;
+TME n_tme;
+
 // Color definitions - in 5:6:5
 #define BLACK           0x0000
 #define BLUE            0x001F
@@ -77,6 +97,8 @@ int pulsev = 0;
 int redflag = 0;
 int greenflag = 0;
 
+#define Y_DATE 213   // center point
+
 /**
  * Light active lines
  */
@@ -94,6 +116,9 @@ byte lightTimeHoursStart[4] = {0,0,0,0};
 byte lightTimeMinutesStart[4] = {0,0,0,0};
 byte lightTimeHoursEnd[4] = {0,0,0,0};
 byte lightTimeMinutesEnd[4] = {0,0,0,0};
+
+int tempC;
+int temp;
 
 int battfill;
 unsigned long battcheck = 10000; // the amount of time between voltage check and battery icon refresh
@@ -190,8 +215,7 @@ void setup(void) {
   tft.fillScreen(BLACK);
   tft.fillRect(0, 0, 320, 10, JJCOLOR); // status bar
   drawhomeicon(); // draw the home icon
-  tft.setCursor(1, 1);
-  tft.print("Your status bar message here.    MFA 0.1 Alpha");
+  
   tft.drawRect(297, 1, 20, 8, WHITE); //battery body
   tft.fillRect(317, 3, 2, 4, WHITE); // battery tip
   tft.fillRect(298, 2, 18, 6, BLACK); // clear the center of the battery
@@ -199,9 +223,61 @@ void setup(void) {
   ant(); // draw the bas "antenna" line without the "signal waves"
   signal(); // draw the "signal waves" around the "antenna"
   homescr(); // draw the homescreen
-  tft.drawRect(0, 200, 245, 40, WHITE); // message box
+  tft.drawRect(0, 200, 270, 40, WHITE); // message box
   pinMode(13, OUTPUT);
+  
+  DS3231.squareWave(SQWAVE_1_HZ);
+  DS3231.read(n_tme);
+  dallasSensors.begin();
+  if (!dallasSensors.getAddress(sensorAddress, 0)) Serial.println("Не можем найти первое устройство");
+  dallasSensors.setResolution(sensorAddress, 12);
   //beep(100);
+  printDate(n_tme.Day, n_tme.Month, n_tme.Year, WHITE);
+  tft.print("    MFA 0.1 Alpha");
+  TextSecond(n_tme.Second, WHITE);
+  TextMinute(n_tme.Minute, WHITE);
+  TextHour(n_tme.Hour, WHITE);
+
+  tempC = printTemperature(sensorAddress, temp);      
+  temp = tempC;
+}
+
+void printTime(){
+        // date change
+    DS3231.read(n_tme);
+    if (o_tme.Day != n_tme.Day || o_tme.Month != n_tme.Month || o_tme.Year != n_tme.Year)
+    {
+      printDate(o_tme.Day, o_tme.Month, o_tme.Year, BLACK);
+      printDate(n_tme.Day, n_tme.Month, n_tme.Year, WHITE);
+      //o_tme.Day = n_tme.Day; do not need to copy as it is copied in next loop
+    }
+    
+    if (o_tme.Second != n_tme.Second) // second change or time ticked
+    {
+      int diff = n_tme.Second - n_tme.Second/10*10;
+      
+      if(diff==0){
+        TextSecond(o_tme.Second, BLACK);
+        TextSecond(n_tme.Second, WHITE);
+
+      } else {
+        int diff_o = o_tme.Second - o_tme.Second/10*10;
+        TextSecondLo(diff_o, BLACK);
+        TextSecondLo(diff, WHITE);
+      }
+      if (o_tme.Minute != n_tme.Minute) // minute change or minute and hour change
+      {
+        TextMinute(o_tme.Minute, BLACK);
+        TextMinute(n_tme.Minute, WHITE);
+      }
+      // draw hour, minute, second hands even no changes to overlap the "clear stuff"
+      if (o_tme.Hour != n_tme.Hour) // minute change or minute and hour change
+      {
+        TextHour(o_tme.Hour, BLACK);
+        TextHour(n_tme.Hour, WHITE);
+      }
+      copyTME(o_tme, n_tme);
+    }
 }
 
 void loop() {
@@ -211,9 +287,13 @@ void loop() {
   digitalWrite(13, LOW);
   pinMode(XM, OUTPUT);
   pinMode(YP, OUTPUT);
-  //pinMode(YM, OUTPUT);
-  currenttime = millis();
-  unsigned long currentawake = millis();
+  
+  printTime();
+
+  dallasSensors.requestTemperatures();
+
+  tempC = printTemperature(sensorAddress, temp);      
+  temp = tempC;
 
   // we have some minimum pressure we consider 'valid'
   // pressure of 0 means no pressing!
@@ -376,11 +456,7 @@ void loop() {
     // home
     if (p.y > 280 && p.y < 340 && p.x > 0 && p.x < 48) { // if the home icon is pressed
       if (page == 8) { // if you are leaving the Schedule page
-        clearmessage(); // clear the battery voltage out of the message box
-        tft.setTextSize(2);
-        tft.setTextColor(YELLOW);
-        tft.setCursor(12, 213);
-        tft.print("Settings Saved"); // display settings saved in message box
+        printMessage("Settings saved", YELLOW); // display settings saved in message box
         EEPROM.write(0, (byte)lightTimeHoursStart[0]);
         EEPROM.write(1, (byte)lightTimeHoursStart[1]);
         EEPROM.write(2, (byte)lightTimeHoursStart[2]);
@@ -523,9 +599,63 @@ void loop() {
 
   }
 }
+
 void beep(int beep_time) {
   myTone(PIN_BUZZER, 2048, beep_time);
 }
+
+// Вспомогательная функция печати значения температуры для устрйоства
+int printTemperature(DeviceAddress deviceAddress, int oldTemp){
+  int tempC = (int)dallasSensors.getTempC(deviceAddress);
+  if(tempC!=oldTemp){
+    printMessageLeft(String(tempC)+"C", BLUE);
+    tft.drawCircle(35, 210, 2, BLUE);
+  }
+  return tempC;
+}
+
+// Print Date in format YYYY-MM-DD
+void printDate(int d, int m, int y, int color)
+{
+  String date = String(y+1970)+"-"+conv_num2char(m)+"-"+conv_num2char(d);
+  tft.fillRect(0, 0, 100, 10, JJCOLOR);
+  tft.setCursor(1, 1);
+  tft.setTextSize(1);
+  tft.print(date);
+}
+
+void TextHour(int number, int color)
+{
+  tft.setTextSize(2);
+  tft.setCursor(183, Y_DATE);
+  tft.setTextColor(color);
+  tft.print(conv_num2char(number));
+}
+
+void TextMinute(int number, int color)
+{
+  tft.setTextSize(2);
+  tft.setCursor(212, Y_DATE);
+  tft.setTextColor(color);
+  tft.print(conv_num2char(number));
+}
+
+void TextSecond(int number, int color)
+{
+  tft.setTextSize(2);
+  tft.setCursor(242, Y_DATE);
+  tft.setTextColor(color);
+  tft.print(conv_num2char(number));
+}
+
+void TextSecondLo(int number, int color)
+{ 
+  tft.setTextSize(2);
+  tft.setCursor(254, Y_DATE);
+  tft.setTextColor(color);
+  tft.print(number);
+}
+
 void redraw() { // redraw the page
   if ((prevpage != 6) || (page !=7)) {
     clearcenter();
@@ -680,7 +810,7 @@ void schedule(int lineIndex) {
   button("+", 60, 55, w, h, WHITE, 22, 5, GREEN);
   button("-", 200, 55, w, h, WHITE, 22, 5, RED);
   button("+", 260, 55, w, h, WHITE, 22, 5, GREEN);
-/*
+  /*
   button("-", 0, 90, w, h, WHITE, 22, 5, RED); 
   button("+", 260, 90, w, h, WHITE, 22, 5, GREEN);
   button("-", 0, 125, w, h, WHITE, 22, 5, RED);
@@ -688,24 +818,15 @@ void schedule(int lineIndex) {
   */
   tft.drawRect(120, 20, 80, 30, JJCOLOR);
   tft.drawRect(120, 55, 80, 30, JJCOLOR);
-  //tft.drawRect(120, 90, 80, 30, JJCOLOR);
-  //tft.drawRect(120, 125, 80, 30, JJCOLOR);
-  
-  
-   
+
   showlightTimeHoursStart(lightTimeHoursStart[lineIndex]);
   showlightTimeMinutesStart(lightTimeMinutesStart[lineIndex]);
   showlightTimeHoursEnd(lightTimeHoursEnd[lineIndex]);
   showlightTimeMinutesEnd(lightTimeMinutesEnd[lineIndex]);
   
-  battv = readVcc(); // read the voltage
-  itoa (battv, voltage, 10);
-  tft.setTextColor(YELLOW);
-  tft.setTextSize(2);
-  tft.setCursor(12, 213);
-  tft.print(voltage);
-  tft.setCursor(60, 213);
-  tft.print("mV");
+  //battv = readVcc(); // read the voltage
+  //itoa (battv, voltage, 10);
+  //printMessage(String(voltage)+"mV", YELLOW); // display settings saved in message box
   /*
   battpercent = (battv / 5000) * 100, 2;
   itoa (battpercent, battpercenttxt, 10);
@@ -1113,6 +1234,34 @@ void drawhomeiconred() { // draws a red home icon
 }
 void clearmessage() {
   tft.fillRect(12, 213, 226, 16, BLACK); // black out the inside of the message box
+}
+void clearmessageLeft(){
+  tft.fillRect(12, 213, 40, 16, BLACK); // black out the inside of the message box
+}
+void clearmessageRight(){
+  tft.fillRect(50, 213, 140, 16, BLACK); // black out the inside of the message box
+}
+void printMessage(String message, int color){
+  clearmessage();
+  tft.setTextSize(2);
+  tft.setTextColor(color);
+  tft.setCursor(12, 213);
+  tft.print(message);
+}
+
+void printMessageLeft(String message, int color){
+  clearmessageLeft();
+  tft.setTextSize(2);
+  tft.setTextColor(color);
+  tft.setCursor(12, 213);
+  tft.print(message);
+}
+void printMessageRight(String message, int color){
+  clearmessageRight();
+  tft.setTextSize(2);
+  tft.setTextColor(color);
+  tft.setCursor(60, 213);
+  tft.print(message);
 }
 /**
  * Reset test values
