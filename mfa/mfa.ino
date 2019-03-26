@@ -520,13 +520,14 @@ void loop() {
     }
     // home
     if (p.y > 280 && p.y < 340 && p.x > 0 && p.x < 48) { // if the home icon is pressed
-      if (page = 9){
+      Serial.println("page="+String(page));
+      if (page == 9){
         EEPROM.write(16, (byte)pumpTimeHoursStart[0]);
         EEPROM.write(17, (byte)pumpTimeMinutesStart[0]);
         EEPROM.write(18, (byte)pumpTimeHoursEnd[0]);
         EEPROM.write(19, (byte)pumpTimeMinutesEnd[0]);
         
-        printMessage("Settings saved", YELLOW); // display settings saved in message box
+        printMessage("Pump saved", YELLOW); // display settings saved in message box
         clearscheduleLightLine(); // erase all the drawings on the settings page
         resetPumpTest();
         printInitialTime();
@@ -551,7 +552,7 @@ void loop() {
         EEPROM.write(14, (byte)lightTimeMinutesEnd[2]);
         EEPROM.write(15, (byte)lightTimeMinutesEnd[3]);
        
-        printMessage("Settings saved", YELLOW); // display settings saved in message box
+        printMessage("Light saved", YELLOW); // display settings saved in message box
         clearscheduleLightLine(); // erase all the drawings on the settings page
         resetLightTest();
         printInitialTime();
@@ -559,7 +560,7 @@ void loop() {
       }
       if (page == 5) { // if you are leaving the Clock settings page
         DS3231.write(clock_tme);
-        printMessage("Settings saved", YELLOW); // display settings saved in message box
+        printMessage("Clock saved", YELLOW); // display settings saved in message box
         clearscheduleLightLine(); // erase all the drawings on the settings page
         resetLightTest();
         printDate(clock_tme.Day, clock_tme.Month, clock_tme.Year, WHITE);
@@ -608,10 +609,10 @@ void loop() {
       //Clock setting
       if(page==5){
         //increase Year
-        if(clock_tme.Year<2020){
-          clock_tme.Year=2100;
+        if(clock_tme.Year<50){
+          clock_tme.Year=130;
         } else {
-          clock_tme.Year--;
+          clock_tme.Year = clock_tme.Year-1;
         }
         showClockYear(clock_tme.Year);
       }
@@ -678,10 +679,10 @@ void loop() {
       //Clock setting
       if(page==5){
         //increase Year
-        if(clock_tme.Year>2099){
-          clock_tme.Year=2019;
+        if(clock_tme.Year>130){
+          clock_tme.Year=49;
         } else {
-          clock_tme.Year++;
+          clock_tme.Year = clock_tme.Year+1;
         }
         showClockYear(clock_tme.Year);
       }
