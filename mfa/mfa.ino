@@ -51,6 +51,8 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 #define PIN_LIGHT_LINE_2 50
 #define PIN_LIGHT_LINE_3 48
 #define PIN_LIGHT_LINE_4 46
+
+byte PIN_LIGHT_LINE[4] = {PIN_LIGHT_LINE_1, PIN_LIGHT_LINE_2, PIN_LIGHT_LINE_3, PIN_LIGHT_LINE_4};
 /**
  * Pump pin
  */
@@ -105,6 +107,10 @@ int greenflag = 0;
  */
 boolean activeLightLine[4] = {false,false,false,false};
 /**
+ * Light selected lines
+ */
+boolean selectedLightLine[4] = {false,false,false,false};
+/**
  * Pump active
  */
 boolean activePump[1] = {false};
@@ -153,16 +159,17 @@ long readVcc() {
 void setup(void) {
   pinMode(3, OUTPUT);
   
-  pinMode(PIN_LIGHT_LINE_1, OUTPUT);
-  pinMode(PIN_LIGHT_LINE_2, OUTPUT);
-  pinMode(PIN_LIGHT_LINE_3, OUTPUT);
-  pinMode(PIN_LIGHT_LINE_4, OUTPUT);
+  pinMode(PIN_LIGHT_LINE[0], OUTPUT);
+  pinMode(PIN_LIGHT_LINE[1], OUTPUT);
+  pinMode(PIN_LIGHT_LINE[2], OUTPUT);
+  pinMode(PIN_LIGHT_LINE[3], OUTPUT);
   pinMode(PIN_PUMP, OUTPUT);
-  digitalWrite(PIN_LIGHT_LINE_1, HIGH);
-  digitalWrite(PIN_LIGHT_LINE_2, HIGH);
-  digitalWrite(PIN_LIGHT_LINE_3, HIGH);
-  digitalWrite(PIN_LIGHT_LINE_4, HIGH);
+  digitalWrite(PIN_LIGHT_LINE[0], HIGH);
+  digitalWrite(PIN_LIGHT_LINE[1], HIGH);
+  digitalWrite(PIN_LIGHT_LINE[2], HIGH);
+  digitalWrite(PIN_LIGHT_LINE[3], HIGH);
   digitalWrite(PIN_PUMP, HIGH);
+  
   lightTimeHoursStart[0] = (byte)EEPROM.read(0);
   lightTimeHoursStart[1] = (byte)EEPROM.read(1);
   lightTimeHoursStart[2] = (byte)EEPROM.read(2);
@@ -240,7 +247,24 @@ void setup(void) {
   tft.print("    MFA 0.1 Alpha");
   printInitialTime();
   printTemperature(sensorAddress, true);      
- 
+  //run scheduled light lines
+  checkLineSchedule();
+}
+
+void checkLineSchedule(){
+  for(int i=0;i<4;i++){
+    int minutes = n_tme.Minute+n_tme.Hour*60;
+    if(!selectedLightLine[i]){
+      if(minutes>=lightTimeMinutesStart[i] + lightTimeHoursStart[i]*60 && minutes<=lightTimeMinutesEnd[i] + lightTimeHoursEnd[i]*60){
+        //turn on line
+        digitalWrite(PIN_LIGHT_LINE[i], LOW);
+        activeLightLine[i] = true;
+      } else {
+        digitalWrite(PIN_LIGHT_LINE[i], HIGH);
+        activeLightLine[i] = false;
+      }
+    }
+  }
 }
 
 void printInitialTime(){
@@ -297,7 +321,7 @@ void loop() {
   printTime();
   dallasSensors.requestTemperatures();
   printTemperature(sensorAddress, false);
-
+  checkLineSchedule();
   // we have some minimum pressure we consider 'valid'
   // pressure of 0 means no pressing!
   if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
@@ -425,7 +449,7 @@ void loop() {
         m2b5action();
       }
       if (page == 1) {
-        showLineTestButton();
+        startLightLineTest();
       }
       if (page == 0) {
         page = 5;
@@ -512,7 +536,7 @@ void loop() {
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
-          if(activeLightLine[i]){
+          if(selectedLightLine[i]){
             declightTimeHoursStart(i);
             break;
           }
@@ -533,7 +557,7 @@ void loop() {
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
-          if(activeLightLine[i]){
+          if(selectedLightLine[i]){
             inclightTimeHoursStart(i);
             break;
           }
@@ -544,7 +568,7 @@ void loop() {
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
-          if(activeLightLine[i]){
+          if(selectedLightLine[i]){
             declightTimeMinutesStart(i);
             break;
           }
@@ -555,7 +579,7 @@ void loop() {
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
-          if(activeLightLine[i]){
+          if(selectedLightLine[i]){
             inclightTimeMinutesStart(i);
             break;
           }
@@ -620,7 +644,7 @@ void loop() {
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
-          if(activeLightLine[i]){
+          if(selectedLightLine[i]){
             declightTimeMinutesEnd(i);
             break;
           }
@@ -642,7 +666,7 @@ void loop() {
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
-          if(activeLightLine[i]){
+          if(selectedLightLine[i]){
             inclightTimeMinutesEnd(i);
             break;
           }
@@ -867,6 +891,8 @@ void menu1() {
   int color = BLACK;
   if(activeLightLine[0]){
     color = JJORNG;
+  } else {
+    color = BLACK;
   }
   button("Line 1", 0, 20, w, h, JJCOLOR, 22, 17, color);
   if(activeLightLine[1]){
@@ -1208,77 +1234,89 @@ void activateLightLine(int index){
 void showLine1Button() {
   int w = 150;
   int h = 50;
-  activeLightLine[0]=!activeLightLine[0];
-  if(activeLightLine[0]){
-    button("Line 1", 0, 20, w, h, JJCOLOR, 22, 17, JJORNG);
+  selectedLightLine[0]=!selectedLightLine[0];
+  if(selectedLightLine[0]){
+    button("Line 1", 0, 20, w, h, JJCOLOR, 22, 17, GREEN);
   } else {
-    button("Line 1", 0, 20, w, h, JJCOLOR, 22, 17, BLACK);
+    if(activeLightLine[0]){
+      button("Line 1", 0, 20, w, h, JJCOLOR, 22, 17, JJORNG);
+    } else {
+      button("Line 1", 0, 20, w, h, JJCOLOR, 22, 17, BLACK);
+    }
   }
   //signal();
 }
 void showLine2Button() {
   int w = 150;
   int h = 50;
-  activeLightLine[1]=!activeLightLine[1];
-  if(activeLightLine[1]){
-    button("Line 2", 170, 20, w, h, JJCOLOR, 22, 17, JJORNG);
+  selectedLightLine[1]=!selectedLightLine[1];
+  if(selectedLightLine[1]){
+    button("Line 2", 170, 20, w, h, JJCOLOR, 22, 17, GREEN);
   } else {
-    button("Line 2", 170, 20, w, h, JJCOLOR, 22, 17, BLACK);
+    if(activeLightLine[1]){
+      button("Line 2", 170, 20, w, h, JJCOLOR, 22, 17, JJORNG);
+    } else {
+      button("Line 2", 170, 20, w, h, JJCOLOR, 22, 17, BLACK);
+    }
   }
   //signalact();
 }
 void showLine3Button() {
   int w = 150;
   int h = 50;
-  activeLightLine[2]=!activeLightLine[2];
-  if(activeLightLine[2]){
-    button("Line 3", 0, 80, w, h, JJCOLOR, 22, 17, JJORNG);
+  selectedLightLine[2]=!selectedLightLine[2];
+  if(selectedLightLine[2]){
+    button("Line 3", 0, 80, w, h, JJCOLOR, 22, 17, GREEN);
   } else {
-    button("Line 3", 0, 80, w, h, JJCOLOR, 22, 17, BLACK);
+    if(activeLightLine[2]){
+      button("Line 3", 0, 80, w, h, JJCOLOR, 22, 17, JJORNG);
+    } else {
+      button("Line 3", 0, 80, w, h, JJCOLOR, 22, 17, BLACK);
+    }
   }
 }
 void showLine4Button() {
   int w = 150;
   int h = 50;
-  activeLightLine[3]=!activeLightLine[3];
-  if(activeLightLine[3]){
-    button("Line 4", 170, 80, w, h, JJCOLOR, 22, 17, JJORNG);
+  selectedLightLine[3]=!selectedLightLine[3];
+  if(selectedLightLine[3]){
+    button("Line 4", 170, 80, w, h, JJCOLOR, 22, 17, GREEN);
   } else {
-    button("Line 4", 170, 80, w, h, JJCOLOR, 22, 17, BLACK);
+    if(activeLightLine[3]){
+      button("Line 4", 170, 80, w, h, JJCOLOR, 22, 17, JJORNG);
+    } else {
+      button("Line 4", 170, 80, w, h, JJCOLOR, 22, 17, BLACK);
+    }
   }
 }
-void showLineTestButton() {
+void startLightLineTest() {
   //Light test
   int w = 150;
   int h = 50;
   activeTest = !activeTest;
-  if(activeTest && (activeLightLine[0] || activeLightLine[1] || activeLightLine[2] || activeLightLine[3])){
-      if(activeLightLine[0]){
-        digitalWrite(PIN_LIGHT_LINE_1, LOW);
-      }
-      if(activeLightLine[1]){
-        digitalWrite(PIN_LIGHT_LINE_2, LOW);
-      }
-      if(activeLightLine[2]){
-        digitalWrite(PIN_LIGHT_LINE_3, LOW);
-      }
-      if(activeLightLine[3]){
-        digitalWrite(PIN_LIGHT_LINE_4, LOW);
+  if(activeTest && (selectedLightLine[0] || selectedLightLine[1] || selectedLightLine[2] || selectedLightLine[3])){
+      for(int i=0;i<4;i++){
+        if(selectedLightLine[i]){
+          digitalWrite(PIN_LIGHT_LINE[i], LOW);
+        }
       }
       button("Test", 0, 140, w, h, JJCOLOR, 22, 17, GREEN);
   } else {
-     digitalWrite(PIN_LIGHT_LINE_1, HIGH);
-     digitalWrite(PIN_LIGHT_LINE_2, HIGH);
-     digitalWrite(PIN_LIGHT_LINE_3, HIGH);
-     digitalWrite(PIN_LIGHT_LINE_4, HIGH);
-     button("Test", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
+    if(selectedLightLine[0] || selectedLightLine[1] || selectedLightLine[2] || selectedLightLine[3]){
+      for(int i=0;i<4;i++){
+        if(selectedLightLine[i]){
+          digitalWrite(PIN_LIGHT_LINE[i], HIGH);
+        }
+      }      
+    }
+    button("Test", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
   }
   
 }
 void showLineSchedule() {
   //Light schedule
   for(int i=0;i<=3;i++){
-    if(activeLightLine[i]){
+    if(selectedLightLine[i]){
       page=8;
       clearSchedule();
       schedule(i);
@@ -1479,6 +1517,10 @@ void printMessageRight(String message, int color){
  */
 void resetTest(){
   activeTest = false;
+  selectedLightLine[0]=false;
+  selectedLightLine[1]=false;
+  selectedLightLine[2]=false;
+  selectedLightLine[3]=false;
 }
 void drawbatt() {
   battv = readVcc(); // read the voltage
