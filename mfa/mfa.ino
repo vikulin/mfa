@@ -1045,7 +1045,13 @@ void menu2() {
   tft.setTextSize(2);
   int w = 150;
   int h = 50;
-  button("Main pump", 0, 20, w, h, JJCOLOR, 22, 17, BLACK);
+  int color = BLACK;
+  if(activePump[0]){
+    color = JJORNG;
+  } else {
+    color = BLACK;
+  }
+  button("Main pump", 0, 20, w, h, JJCOLOR, 22, 17, color);
   button("--", 170, 20, w, h, JJCOLOR, 22, 17, BLACK);
   button("--", 0, 80, w, h, JJCOLOR, 22, 17, BLACK);
   button("--", 170, 80, w, h, JJCOLOR, 22, 17, BLACK);
@@ -1141,10 +1147,10 @@ void scheduleLightLine(int lineIndex) {
   tft.drawRect(120, 20, 80, 30, JJCOLOR);
   tft.drawRect(120, 55, 80, 30, JJCOLOR);
 
-  showlightTimeHoursStart(lightTimeHoursStart[lineIndex]);
-  showlightTimeMinutesStart(lightTimeMinutesStart[lineIndex]);
-  showlightTimeHoursEnd(lightTimeHoursEnd[lineIndex]);
-  showlightTimeMinutesEnd(lightTimeMinutesEnd[lineIndex]);
+  showLightTimeHoursStart(lightTimeHoursStart[lineIndex]);
+  showLightTimeMinutesStart(lightTimeMinutesStart[lineIndex]);
+  showLightTimeHoursEnd(lightTimeHoursEnd[lineIndex]);
+  showLightTimeMinutesEnd(lightTimeMinutesEnd[lineIndex]);
   
   //battv = readVcc(); // read the voltage
   //itoa (battv, voltage, 10);
@@ -1221,7 +1227,7 @@ void showClockMinutes(int minutesDate) {
   tft.print(conv_num2char(minutesDate));
 }
 
-void showlightTimeHoursStart(int lightTimeH) {
+void showLightTimeHoursStart(int lightTimeH) {
   tft.fillRect(123, 25, 30, 20, GRAY);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
@@ -1234,7 +1240,7 @@ void showlightTimeHoursStart(int lightTimeH) {
   tft.print(":");
 }
 
-void showlightTimeMinutesStart(int lightTimeM) {
+void showLightTimeMinutesStart(int lightTimeM) {
   tft.fillRect(168, 25, 30, 20, GRAY);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
@@ -1242,7 +1248,7 @@ void showlightTimeMinutesStart(int lightTimeM) {
   tft.print(conv_num2char(lightTimeM));
 }
 
-void showlightTimeHoursEnd(int lightTimeH) {
+void showLightTimeHoursEnd(int lightTimeH) {
   tft.fillRect(123, 60, 30, 20, GRAY);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
@@ -1254,7 +1260,7 @@ void showlightTimeHoursEnd(int lightTimeH) {
   tft.print(lightTimeH);
   tft.print(":");
 }
-void showlightTimeMinutesEnd(int lightTimeM) {
+void showLightTimeMinutesEnd(int lightTimeM) {
   tft.fillRect(168, 60, 30, 20, GRAY);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
@@ -1263,16 +1269,16 @@ void showlightTimeMinutesEnd(int lightTimeM) {
 }
 
 void showPumpTimeHoursStart(int pumpTimeH) {
-  showlightTimeHoursStart(pumpTimeH);
+  showLightTimeHoursStart(pumpTimeH);
 }
 void showPumpTimeHoursEnd(int pumpTimeH) {
-  showlightTimeHoursEnd(pumpTimeH);
+  showLightTimeHoursEnd(pumpTimeH);
 }
 void showPumpTimeMinutesStart(int pumpTimeM) {
-  showlightTimeMinutesStart(pumpTimeM);
+  showLightTimeMinutesStart(pumpTimeM);
 }
 void showPumpTimeMinutesEnd(int pumpTimeM) {
-  showlightTimeMinutesEnd(pumpTimeM);
+  showLightTimeMinutesEnd(pumpTimeM);
 }
 
 void incLightTimeMinutesStart(int lineIndex) { // sleep increese adjustment
@@ -1282,9 +1288,9 @@ void incLightTimeMinutesStart(int lineIndex) { // sleep increese adjustment
   } else {
     lightTimeMinutesStart[lineIndex]=0;
   }
-  showlightTimeMinutesStart(lightTimeMinutesStart[lineIndex]);
+  showLightTimeMinutesStart(lightTimeMinutesStart[lineIndex]);
   if(lightTimeHoursStart[lineIndex]==0 && lightTimeMinutesStart[lineIndex]==0){
-    showlightTimeHoursStart(0);
+    showLightTimeHoursStart(0);
   }
   delay(350);
 }
@@ -1295,9 +1301,9 @@ void decLightTimeMinutesStart(int lineIndex) { // sleep decreese adjustment
   } else {
     lightTimeMinutesStart[lineIndex]=59;
   }
-  showlightTimeMinutesStart(lightTimeMinutesStart[lineIndex]);
+  showLightTimeMinutesStart(lightTimeMinutesStart[lineIndex]);
   if(lightTimeHoursStart[lineIndex]==0 && lightTimeMinutesStart[lineIndex]==0){
-    showlightTimeHoursStart(0);
+    showLightTimeHoursStart(0);
   }
   delay(350);
 }
@@ -1308,9 +1314,9 @@ void incLightTimeHoursStart(int lineIndex) { // sleep increese adjustment
   } else {
     lightTimeHoursStart[lineIndex]=0;
   }
-  showlightTimeHoursStart(lightTimeHoursStart[lineIndex]);
+  showLightTimeHoursStart(lightTimeHoursStart[lineIndex]);
   if(lightTimeHoursStart[lineIndex]==0 && lightTimeMinutesStart[lineIndex]==0){
-    showlightTimeMinutesStart(0);
+    showLightTimeMinutesStart(0);
   }
   delay(350);
 }
@@ -1321,9 +1327,9 @@ void decLightTimeHoursStart(int lineIndex) { // sleep decreese adjustment
   } else {
     lightTimeHoursStart[lineIndex]=23;
   }
-  showlightTimeHoursStart(lightTimeHoursStart[lineIndex]);  
+  showLightTimeHoursStart(lightTimeHoursStart[lineIndex]);  
   if(lightTimeHoursStart[lineIndex]==0 && lightTimeMinutesStart[lineIndex]==0){
-    showlightTimeMinutesStart(0);
+    showLightTimeMinutesStart(0);
   }
   delay(350);
 }
@@ -1338,9 +1344,9 @@ void incLightTimeMinutesEnd(int lineIndex) { // sleep increese adjustment
   } else {
     lightTimeMinutesEnd[lineIndex]=0;
   }
-  showlightTimeMinutesEnd(lightTimeMinutesEnd[lineIndex]);
+  showLightTimeMinutesEnd(lightTimeMinutesEnd[lineIndex]);
   if(lightTimeHoursEnd[lineIndex]==0 && lightTimeMinutesEnd[lineIndex]==0){
-    showlightTimeHoursEnd(0);
+    showLightTimeHoursEnd(0);
   }
   delay(350);
 }
@@ -1351,9 +1357,9 @@ void decLightTimeMinutesEnd(int lineIndex) { // sleep decreese adjustment
   } else {
     lightTimeMinutesEnd[lineIndex]=59;
   }
-  showlightTimeMinutesEnd(lightTimeMinutesEnd[lineIndex]);
+  showLightTimeMinutesEnd(lightTimeMinutesEnd[lineIndex]);
   if(lightTimeHoursEnd[lineIndex]==0 && lightTimeMinutesEnd[lineIndex]==0){
-    showlightTimeHoursEnd(0);
+    showLightTimeHoursEnd(0);
   }
   delay(350);
 }
@@ -1364,9 +1370,9 @@ void incLightTimeHoursEnd(int lineIndex) { // sleep increese adjustment
   } else {
     lightTimeHoursEnd[lineIndex]=0;
   }
-  showlightTimeHoursEnd(lightTimeHoursEnd[lineIndex]);
+  showLightTimeHoursEnd(lightTimeHoursEnd[lineIndex]);
   if(lightTimeHoursEnd[lineIndex]==0 && lightTimeMinutesEnd[lineIndex]==0){
-    showlightTimeMinutesEnd(0);
+    showLightTimeMinutesEnd(0);
   }
   delay(350);
 }
@@ -1377,9 +1383,9 @@ void decLightTimeHoursEnd(int lineIndex) { // sleep decreese adjustment
   } else {
     lightTimeHoursEnd[lineIndex]=23;
   }
-  showlightTimeHoursEnd(lightTimeHoursEnd[lineIndex]);  
+  showLightTimeHoursEnd(lightTimeHoursEnd[lineIndex]);  
   if(lightTimeHoursEnd[lineIndex]==0 && lightTimeMinutesEnd[lineIndex]==0){
-    showlightTimeMinutesEnd(0);
+    showLightTimeMinutesEnd(0);
   }
   delay(350);
 }
