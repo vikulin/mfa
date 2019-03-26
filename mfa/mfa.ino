@@ -382,431 +382,420 @@ void loop() {
     
     // area 1
     if (p.y > 0 && p.y < 146 && p.x > 178 && p.x < 226) { // if this area is pressed
-      //if (page == 5) { // and if page 5 is drawn on the screen
-      //  m5b1action(); // do whatever this button is
-      //}
-      if (page == 4) {
-        m4b1action();
-      }
-      if (page == 3) {
-        m3b1action();
-      }
-      if (page == 2) {
-        showMainPumpButton();
-      }
-      if (page == 1) {
-        showLine1Button();
-      }
-      if (page == 0) { // if you are on the "home" page (0)
-        page = 1; // then you just went to the first page
-        redraw(); // redraw the screen with the page value 1, giving you the page 1 menu
+      switch (page) {
+        case 4:
+          m4b1action();
+          break;
+        case 3:
+          m3b1action();
+          break;
+        case 2:
+          showMainPumpButton();
+          break;
+        case 1:
+          showLine1Button();
+          break;
+        case 0: // if you are on the "home" page (0)
+          page = 1; // then you just went to the first page
+          redraw(); // redraw the screen with the page value 1, giving you the page 1 menu
+          break;
       }
     }
     // area 2
     if (p.y > 168 && p.y < 320 && p.x > 180 && p.x < 226) {
-      //if (page == 5) {
-      //  m5b2action();
-      //}
-      if (page == 4) {
-        m4b2action();
-      }
-      if (page == 3) {
-        m3b2action();
-      }
-      if (page == 2) {
-        m2b2action();
-      }
-      if (page == 1) {
-        showLine2Button();
-      }
-      if (page == 0) {
-        page = 2;
-        redraw();
+        switch (page) {
+        case 4:
+          m4b2action();
+          break;
+        case 3:
+          m3b2action();
+          break;
+        case 2:
+           m2b2action();
+          break;
+        case 1:
+          showLine2Button();
+          break;
+        case 0:
+          page = 2;
+          redraw();
+          break;
       }
     }
     // area 3
     if (p.y > 0 && p.y < 146 && p.x > 120 && p.x < 168) {
-      //if (page == 5) {
-      //  m5b3action();
-      //}
-      if (page == 4) {
-        m4b3action();
-      }
-      if (page == 3) {
-        m3b3action();
-      }
-      if (page == 2) {
-        m2b3action();
-      }
-      if (page == 1) {
-        showLine3Button();
-      }
-      if (page == 0) {
-        page = 3;
-        redraw();
+        switch (page) {
+        case 4:
+          m4b3action();
+          break;
+        case 3:
+          m3b3action();
+          break;
+        case 2:
+           m2b3action();
+          break;
+        case 1:
+          showLine3Button();
+          break;
+        case 0:
+          page = 3;
+          redraw();
+          break;
       }
     }
     // area 4
     if (p.y > 167 && p.y < 320 && p.x > 120 && p.x < 168) {
-      //if (page == 5) {
-      //  m5b4action();
-      //}
-      if (page == 4) {
-        m4b4action();
-      }
-      if (page == 3) {
-        m3b4action();
-      }
-      if (page == 2) {
-        m2b4action();
-      }
-      if (page == 1) {
-        showLine4Button();
-      }
-      if (page == 0) {
-        page = 4;
-        redraw();
+        switch (page) {
+        case 4:
+          m4b4action();
+          break;
+        case 3:
+          m3b4action();
+          break;
+        case 2:
+           m2b4action();
+          break;
+        case 1:
+          showLine4Button();
+          break;
+        case 0:
+          page = 4;
+          redraw();
+          break;
       }
     }
     // area 5
     if (p.y > 0 && p.y < 146 && p.x > 54 && p.x < 104) {
-      //if (page == 5) {
-      //  m5b5action();
-      //}
-      if (page == 4) {
-        float pH = m4b5action();
-        tft.setCursor(12, 213);
-        tft.print(String(pH));
-        delay(1000);
-        clearmessage();
-      }
-      if (page == 3) {
-        m3b5action();
-      }
-      if (page == 2) {
-        startPumpTest();
-      }
-      if (page == 1) {
-        startLightLineTest();
-      }
-      if (page == 0) {
-        page = 5;
-        redraw();
+        switch (page) {
+        case 4:
+          float pH = m4b5action();
+          tft.setCursor(12, 213);
+          tft.print(String(pH));
+          delay(1000);
+          clearmessage();
+          break;
+        case 3:
+          m3b5action();
+          break;
+        case 2:
+          startPumpTest();
+          break;
+        case 1:
+          startLightLineTest();
+          break;
+        case 0:
+          page = 5;
+          redraw();
+          break;
       }
     }
     // area 6
     if (p.y > 168 && p.y < 320 && p.x > 54 && p.x < 104) {
-      //if (page == 5) {
-      //  m5b6action();
-      //}
-      if (page == 4) {
-        m4b6action();
-      }
-      if (page == 3) {
-        m3b6action();
-      }
-      if (page == 2) {
-        showPumpSchedule();
-        printInitialTime();
-      }
-      if (page == 1) {
-        showLightLineSchedule();
-        printInitialTime();
-      }
-      if (page == 0) {
-        page = 6;
-        redraw();
+        switch (page) {
+        case 4:
+          m4b6action();
+          break;
+        case 3:
+          m3b6action();
+          break;
+        case 2:
+          showPumpSchedule();
+          printInitialTime();
+          break;
+        case 1:
+          showLightLineSchedule();
+          printInitialTime();
+          break;
+        case 0:
+          page = 6;
+          redraw();
+          break;
       }
     }
     // home
     if (p.y > 280 && p.y < 340 && p.x > 0 && p.x < 48) { // if the home icon is pressed
-      if (page = 9){
-        EEPROM.write(16, (byte)pumpTimeHoursStart[0]);
-        EEPROM.write(17, (byte)pumpTimeMinutesStart[0]);
-        EEPROM.write(18, (byte)pumpTimeHoursEnd[0]);
-        EEPROM.write(19, (byte)pumpTimeMinutesEnd[0]);
-        
-        printMessage("Settings saved", YELLOW); // display settings saved in message box
-        clearscheduleLightLine(); // erase all the drawings on the settings page
-        resetPumpTest();
-        printInitialTime();
-        printTemperature(sensorAddress, true);
-      }
-      if (page == 8) { // if you are leaving the scheduleLightLine page
-        EEPROM.write(0, (byte)lightTimeHoursStart[0]);
-        EEPROM.write(1, (byte)lightTimeHoursStart[1]);
-        EEPROM.write(2, (byte)lightTimeHoursStart[2]);
-        EEPROM.write(3, (byte)lightTimeHoursStart[3]);
-        EEPROM.write(4, (byte)lightTimeMinutesStart[0]);
-        EEPROM.write(5, (byte)lightTimeMinutesStart[1]);
-        EEPROM.write(6, (byte)lightTimeMinutesStart[2]);
-        EEPROM.write(7, (byte)lightTimeMinutesStart[3]);
+        switch (page) {
+          case 9:
+            EEPROM.write(16, (byte)pumpTimeHoursStart[0]);
+            EEPROM.write(17, (byte)pumpTimeMinutesStart[0]);
+            EEPROM.write(18, (byte)pumpTimeHoursEnd[0]);
+            EEPROM.write(19, (byte)pumpTimeMinutesEnd[0]);
+            
+            printMessage("Settings saved", YELLOW); // display settings saved in message box
+            clearscheduleLightLine(); // erase all the drawings on the settings page
+            resetPumpTest();
+            printInitialTime();
+            printTemperature(sensorAddress, true);
 
-        EEPROM.write(8, (byte)lightTimeHoursEnd[0]);
-        EEPROM.write(9, (byte)lightTimeHoursEnd[1]);
-        EEPROM.write(10, (byte)lightTimeHoursEnd[2]);
-        EEPROM.write(11, (byte)lightTimeHoursEnd[3]);
-        EEPROM.write(12, (byte)lightTimeMinutesEnd[0]);
-        EEPROM.write(13, (byte)lightTimeMinutesEnd[1]);
-        EEPROM.write(14, (byte)lightTimeMinutesEnd[2]);
-        EEPROM.write(15, (byte)lightTimeMinutesEnd[3]);
-       
-        printMessage("Settings saved", YELLOW); // display settings saved in message box
-        clearscheduleLightLine(); // erase all the drawings on the settings page
-        resetLightTest();
-        printInitialTime();
-        printTemperature(sensorAddress, true);
-      }
-      if (page == 5) { // if you are leaving the Clock settings page
-        DS3231.write(clock_tme);
-        printMessage("Settings saved", YELLOW); // display settings saved in message box
-        clearscheduleLightLine(); // erase all the drawings on the settings page
-        resetLightTest();
-        printDate(clock_tme.Day, clock_tme.Month, clock_tme.Year, WHITE);
-        printInitialTime();
-        printTemperature(sensorAddress, true);
-      }
-      if(page=1){
-        resetLightTest();
-      }
-      if (page == 0) { // if you are already on the home page
-        drawhomeiconred(); // draw the home icon red
-        delay(250); // wait a bit
-        drawhomeicon(); // draw the home icon back to white
-        return; // if you were on the home page, stop.
-      }
-      else { // if you are not on the settings, home, or keyboard page
-        page = prevpage; // a value to keep track of what WAS on the screen to redraw/erase only what needs to be
-        page = 0; // make the current page home
-        redraw(); // redraw the page
+          case 8:
+            EEPROM.write(0, (byte)lightTimeHoursStart[0]);
+            EEPROM.write(1, (byte)lightTimeHoursStart[1]);
+            EEPROM.write(2, (byte)lightTimeHoursStart[2]);
+            EEPROM.write(3, (byte)lightTimeHoursStart[3]);
+            EEPROM.write(4, (byte)lightTimeMinutesStart[0]);
+            EEPROM.write(5, (byte)lightTimeMinutesStart[1]);
+            EEPROM.write(6, (byte)lightTimeMinutesStart[2]);
+            EEPROM.write(7, (byte)lightTimeMinutesStart[3]);
+    
+            EEPROM.write(8, (byte)lightTimeHoursEnd[0]);
+            EEPROM.write(9, (byte)lightTimeHoursEnd[1]);
+            EEPROM.write(10, (byte)lightTimeHoursEnd[2]);
+            EEPROM.write(11, (byte)lightTimeHoursEnd[3]);
+            EEPROM.write(12, (byte)lightTimeMinutesEnd[0]);
+            EEPROM.write(13, (byte)lightTimeMinutesEnd[1]);
+            EEPROM.write(14, (byte)lightTimeMinutesEnd[2]);
+            EEPROM.write(15, (byte)lightTimeMinutesEnd[3]);
+           
+            printMessage("Settings saved", YELLOW); // display settings saved in message box
+            clearscheduleLightLine(); // erase all the drawings on the settings page
+            resetLightTest();
+            printInitialTime();
+            printTemperature(sensorAddress, true);
+
+         case 5:
+            DS3231.write(clock_tme);
+            printMessage("Settings saved", YELLOW); // display settings saved in message box
+            clearscheduleLightLine(); // erase all the drawings on the settings page
+            resetLightTest();
+            printDate(clock_tme.Day, clock_tme.Month, clock_tme.Year, WHITE);
+            printInitialTime();
+            printTemperature(sensorAddress, true);
+
+        case 1:
+            resetLightTest();
+
+        case 0:// if you are already on the home page
+            drawhomeiconred(); // draw the home icon red
+            delay(250); // wait a bit
+            drawhomeicon(); // draw the home icon back to white
+            return; // if you were on the home page, stop.  
+        default: // if you are not on the settings, home, or keyboard page
+            page = prevpage; // a value to keep track of what WAS on the screen to redraw/erase only what needs to be
+            page = 0; // make the current page home
+            redraw(); // redraw the page
       }
     }
     // message area
     if (p.y > 0 && p.y < 246 && p.x > 4 && p.x < 44) {
       clearmessage(); // erase the message
+      return;
     }
     
     if (p.y > 0 && p.y < 60 && p.x > 180 && p.x < 210) {
-      // PumpTime buttons
-      if (page == 9) {
-        for(int i=0;i<1;i++){
-          if(selectedPump[i]){
-            decPumpTimeHoursStart(i);
-            break;
+      switch (page) {
+        case 9:
+          for(int i=0;i<1;i++){
+            if(selectedPump[i]){
+              decPumpTimeHoursStart(i);
+              break;
+            }
           }
-        }
-      }
-      // LightTime buttons
-      if (page == 8) {
-        for(int i=0;i<=3;i++){
-          if(selectedLightLine[i]){
-            decLightTimeHoursStart(i);
-            break;
+          break;
+        case 8:
+          for(int i=0;i<=3;i++){
+            if(selectedLightLine[i]){
+              decLightTimeHoursStart(i);
+              break;
+            }
           }
-        }
-      }
-      //Clock setting
-      if(page==5){
-        //increase Year
-        if(clock_tme.Year<2020){
-          clock_tme.Year=2100;
-        } else {
-          clock_tme.Year--;
-        }
-        showClockYear(clock_tme.Year);
+          break;
+        case 5:
+          if(clock_tme.Year<2020){
+            clock_tme.Year=2100;
+          } else {
+            clock_tme.Year--;
+          }
+          showClockYear(clock_tme.Year);
       }
     }
     if (p.y > 60 && p.y < 120 && p.x > 180 && p.x < 210) {
       // PumpTime buttons
-      if (page == 9) {
-        for(int i=0;i<1;i++){
-          if(selectedPump[i]){
-            incPumpTimeHoursStart(i);
-            break;
+      switch (page) {
+        case 9:
+          for(int i=0;i<1;i++){
+            if(selectedPump[i]){
+              incPumpTimeHoursStart(i);
+              break;
+            }
           }
-        }
-      }
-      // LightTime buttons
-      if (page == 8) {
-        for(int i=0;i<=3;i++){
-          if(selectedLightLine[i]){
-            incLightTimeHoursStart(i);
-            break;
+          break;
+        case 8:
+          for(int i=0;i<=3;i++){
+            if(selectedLightLine[i]){
+              incLightTimeHoursStart(i);
+              break;
+            }
           }
-        }
+          break;
       }
     }
     if (p.y > 200 && p.y < 260 && p.x > 180 && p.x < 210) {
       // PumpTime buttons
-      if (page == 9) {
-        for(int i=0;i<1;i++){
-          if(selectedPump[i]){
-            decPumpTimeMinutesStart(i);
-            break;
+      switch (page) {
+        case 9:
+          for(int i=0;i<1;i++){
+            if(selectedPump[i]){
+              decPumpTimeMinutesStart(i);
+              break;
+            }
           }
-        }
-      }
-      // LightTime buttons
-      if (page == 8) {
-        for(int i=0;i<=3;i++){
-          if(selectedLightLine[i]){
-            decLightTimeMinutesStart(i);
-            break;
+          break;
+        case 8:
+          for(int i=0;i<=3;i++){
+            if(selectedLightLine[i]){
+              decLightTimeMinutesStart(i);
+              break;
+            }
           }
-        }
+          break;
       }
     }
     if (p.y > 260 && p.y < 320 && p.x > 180 && p.x < 210) {
       // LightTime buttons
-      if (page == 9) {
-        for(int i=0;i<1;i++){
-          if(selectedPump[i]){
-            incPumpTimeMinutesStart(i);
-            break;
+      switch (page) {
+        case 9:
+          for(int i=0;i<1;i++){
+            if(selectedPump[i]){
+              incPumpTimeMinutesStart(i);
+              break;
+            }
           }
-        }
-      }
-      // LightTime buttons
-      if (page == 8) {
-        for(int i=0;i<=3;i++){
-          if(selectedLightLine[i]){
-            incLightTimeMinutesStart(i);
-            break;
+          break;
+        case 8:
+          for(int i=0;i<=3;i++){
+            if(selectedLightLine[i]){
+              incLightTimeMinutesStart(i);
+              break;
+            }
           }
-        }
-      }
-      //Clock setting
-      if(page==5){
-        //increase Year
-        if(clock_tme.Year>2099){
-          clock_tme.Year=2019;
-        } else {
-          clock_tme.Year++;
-        }
-        showClockYear(clock_tme.Year);
+          break;
+        case 5:
+          //increase Year
+          if(clock_tme.Year>2099){
+            clock_tme.Year=2019;
+          } else {
+            clock_tme.Year++;
+          }
+          showClockYear(clock_tme.Year);
       }
     }
     
     if (p.y > 0 && p.y < 60 && p.x > 150 && p.x < 180) {
       // PumpTime buttons
-      if (page == 9) {
-         for(int i=0;i<1;i++){
-          if(selectedPump[i]){
-            decPumpTimeHoursEnd(i);
-            break;
+      switch (page) {
+        case 9:
+          for(int i=0;i<1;i++){
+            if(selectedPump[i]){
+              decPumpTimeHoursEnd(i);
+              break;
+            }
           }
-        }
-      }
-      // LightTime buttons
-      if (page == 8) {
-         for(int i=0;i<=3;i++){
-          if(selectedLightLine[i]){
-            decLightTimeHoursEnd(i);
-            break;
+          break;
+        case 8:
+          for(int i=0;i<=3;i++){
+            if(selectedLightLine[i]){
+              decLightTimeHoursEnd(i);
+              break;
+            }
           }
-        }
-      }
-      //Clock setting
-      if(page==5){
-        //increase Month
-        if(clock_tme.Month<2){
-          clock_tme.Month=12;
-        } else {
-          clock_tme.Month--;
-        }
-        showClockMonth(clock_tme.Month);
+          break;
+        case 5:
+          //increase Month
+          if(clock_tme.Month<2){
+            clock_tme.Month=12;
+          } else {
+            clock_tme.Month--;
+          }
+          showClockMonth(clock_tme.Month);
       }
     }
     if (p.y > 60 && p.y < 120 && p.x > 150 && p.x < 180) {
       // PumpTime buttons
-      if (page == 9) {
-        for(int i=0;i<1;i++){
-          if(selectedPump[i]){
-            incPumpTimeHoursEnd(i);
-            break;
+      switch (page) {
+        case 9:
+          for(int i=0;i<1;i++){
+            if(selectedPump[i]){
+              incPumpTimeHoursEnd(i);
+              break;
+            }
           }
-        }
-      }
-      // LightTime buttons
-      if (page == 8) {
-        for(int i=0;i<=3;i++){
-          if(selectedLightLine[i]){
-            incLightTimeHoursEnd(i);
-            break;
+          break;
+        case 8:
+          for(int i=0;i<=3;i++){
+            if(selectedLightLine[i]){
+              incLightTimeHoursEnd(i);
+              break;
+            }
           }
-        }
-      }
-      //Clock setting
-      if(page==5){
-        //increase Month
-        if(clock_tme.Month>11){
-          clock_tme.Month=1;
-        } else {
-          clock_tme.Month++;
-        }
-        showClockMonth(clock_tme.Month);
+          break;
+        case 5:
+            //increase Month
+          if(clock_tme.Month>11){
+            clock_tme.Month=1;
+          } else {
+            clock_tme.Month++;
+          }
+          showClockMonth(clock_tme.Month);
       }
     }
   
    if (p.y > 200 && p.y < 260 && p.x > 150 && p.x < 180) {
       // PumpTime buttons
-      if (page == 9) {
-        for(int i=0;i<1;i++){
-          if(selectedPump[i]){
-            decPumpTimeMinutesEnd(i);
-            break;
+      switch (page) {
+        case 9:
+          for(int i=0;i<1;i++){
+            if(selectedPump[i]){
+              decPumpTimeMinutesEnd(i);
+              break;
+            }
           }
-        }
-      }
-      // LightTime buttons
-      if (page == 8) {
-        for(int i=0;i<=3;i++){
-          if(selectedLightLine[i]){
-            decLightTimeMinutesEnd(i);
-            break;
+          break;
+        case 8:
+          for(int i=0;i<=3;i++){
+            if(selectedLightLine[i]){
+              decLightTimeMinutesEnd(i);
+              break;
+            }
           }
-        }
-      }
-      //Clock setting
-      if(page==5){
-        //increase Day
-        if(clock_tme.Day<2){
-          clock_tme.Day=31;
-        } else {
-          clock_tme.Day--;
-        }
-        showClockDay(clock_tme.Day);
+          break;
+        case 5:
+            //increase Day
+          if(clock_tme.Day<2){
+            clock_tme.Day=31;
+          } else {
+            clock_tme.Day--;
+          }
+          showClockDay(clock_tme.Day);
       }
     }
 
    if (p.y > 260 && p.y < 320 && p.x > 150 && p.x < 180) {
       // PumpTime buttons
-      if (page == 9) {
-        for(int i=0;i<1;i++){
-          if(selectedPump[i]){
-            incPumpTimeMinutesEnd(i);
-            break;
+      switch (page) {
+        case 9:
+          for(int i=0;i<1;i++){
+            if(selectedPump[i]){
+              incPumpTimeMinutesEnd(i);
+              break;
+            }
           }
-        }
-      }
-      // LightTime buttons
-      if (page == 8) {
-        for(int i=0;i<=3;i++){
-          if(selectedLightLine[i]){
-            incLightTimeMinutesEnd(i);
-            break;
+          break;
+        case 8:
+          for(int i=0;i<=3;i++){
+            if(selectedLightLine[i]){
+              incLightTimeMinutesEnd(i);
+              break;
+            }
           }
-        }
-      }
-      //Clock setting
-      if(page==5){
-        //increase Day
-        if(clock_tme.Day>30){
-          clock_tme.Day=1;
-        } else {
-          clock_tme.Day++;
-        }
-        showClockDay(clock_tme.Day);
+          break;
+        case 5:
+            //increase Day
+          if(clock_tme.Day>30){
+            clock_tme.Day=1;
+          } else {
+            clock_tme.Day++;
+          }
+          showClockDay(clock_tme.Day);
       }
     }
 
