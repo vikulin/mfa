@@ -75,6 +75,7 @@ DeviceAddress sensorAddress;
 
 TME o_tme;
 TME n_tme;
+TME clock_tme;
 
 // Color definitions - in 5:6:5
 #define BLACK           0x0000
@@ -238,7 +239,7 @@ void setup(void) {
   printDate(n_tme.Day, n_tme.Month, n_tme.Year, WHITE);
   tft.print("    MFA 0.1 Alpha");
   printInitialTime();
-  printTemperature(sensorAddress);      
+  printTemperature(sensorAddress, true);      
  
 }
 
@@ -294,10 +295,8 @@ void loop() {
   pinMode(YP, OUTPUT);
   
   printTime();
-
   dallasSensors.requestTemperatures();
-
-  printTemperature(sensorAddress);      
+  printTemperature(sensorAddress, false);
 
   // we have some minimum pressure we consider 'valid'
   // pressure of 0 means no pressing!
@@ -318,14 +317,12 @@ void loop() {
     Serial.print(p.y);
     Serial.print("   p.x:");
     Serial.println(p.x);
-
-
     
     // area 1
     if (p.y > 0 && p.y < 146 && p.x > 178 && p.x < 226) { // if this area is pressed
-      if (page == 5) { // and if page 5 is drawn on the screen
-        m5b1action(); // do whatever this button is
-      }
+      //if (page == 5) { // and if page 5 is drawn on the screen
+      //  m5b1action(); // do whatever this button is
+      //}
       if (page == 4) {
         m4b1action();
       }
@@ -345,9 +342,9 @@ void loop() {
     }
     // area 2
     if (p.y > 168 && p.y < 320 && p.x > 180 && p.x < 226) {
-      if (page == 5) {
-        m5b2action();
-      }
+      //if (page == 5) {
+      //  m5b2action();
+      //}
       if (page == 4) {
         m4b2action();
       }
@@ -367,9 +364,9 @@ void loop() {
     }
     // area 3
     if (p.y > 0 && p.y < 146 && p.x > 120 && p.x < 168) {
-      if (page == 5) {
-        m5b3action();
-      }
+      //if (page == 5) {
+      //  m5b3action();
+      //}
       if (page == 4) {
         m4b3action();
       }
@@ -389,9 +386,9 @@ void loop() {
     }
     // area 4
     if (p.y > 167 && p.y < 320 && p.x > 120 && p.x < 168) {
-      if (page == 5) {
-        m5b4action();
-      }
+      //if (page == 5) {
+      //  m5b4action();
+      //}
       if (page == 4) {
         m4b4action();
       }
@@ -411,9 +408,9 @@ void loop() {
     }
     // area 5
     if (p.y > 0 && p.y < 146 && p.x > 54 && p.x < 104) {
-      if (page == 5) {
-        m5b5action();
-      }
+      //if (page == 5) {
+      //  m5b5action();
+      //}
       if (page == 4) {
         float pH = m4b5action();
         tft.setCursor(12, 213);
@@ -437,9 +434,9 @@ void loop() {
     }
     // area 6
     if (p.y > 168 && p.y < 320 && p.x > 54 && p.x < 104) {
-      if (page == 5) {
-        m5b6action();
-      }
+      //if (page == 5) {
+      //  m5b6action();
+      //}
       if (page == 4) {
         m4b6action();
       }
@@ -461,7 +458,7 @@ void loop() {
     // home
     if (p.y > 280 && p.y < 340 && p.x > 0 && p.x < 48) { // if the home icon is pressed
       if (page == 8) { // if you are leaving the Schedule page
-        printMessage("Settings saved", YELLOW); // display settings saved in message box
+        
         EEPROM.write(0, (byte)lightTimeHoursStart[0]);
         EEPROM.write(1, (byte)lightTimeHoursStart[1]);
         EEPROM.write(2, (byte)lightTimeHoursStart[2]);
@@ -479,10 +476,20 @@ void loop() {
         EEPROM.write(13, (byte)lightTimeMinutesEnd[1]);
         EEPROM.write(14, (byte)lightTimeMinutesEnd[2]);
         EEPROM.write(15, (byte)lightTimeMinutesEnd[3]);
-        
+        printMessage("Settings saved", YELLOW); // display settings saved in message box
         clearSchedule(); // erase all the drawings on the settings page
         resetTest();
         printInitialTime();
+        printTemperature(sensorAddress, true);
+      }
+      if (page == 5) { // if you are leaving the Clock settings page
+        DS3231.write(clock_tme);
+        printMessage("Settings saved", YELLOW); // display settings saved in message box
+        clearSchedule(); // erase all the drawings on the settings page
+        resetTest();
+        printDate(clock_tme.Day, clock_tme.Month, clock_tme.Year, WHITE);
+        printInitialTime();
+        printTemperature(sensorAddress, true);
       }
       if (page == 0) { // if you are already on the home page
         drawhomeiconred(); // draw the home icon red
@@ -500,8 +507,9 @@ void loop() {
     if (p.y > 0 && p.y < 246 && p.x > 4 && p.x < 44) {
       clearmessage(); // erase the message
     }
-    // LightTime buttons
+    
     if (p.y > 0 && p.y < 60 && p.x > 180 && p.x < 210) {
+      // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(activeLightLine[i]){
@@ -510,8 +518,19 @@ void loop() {
           }
         }
       }
+      //Clock setting
+      if(page==5){
+        //increase Year
+        if(clock_tme.Year<2020){
+          clock_tme.Year=2100;
+        } else {
+          clock_tme.Year--;
+        }
+        showClockYear(clock_tme.Year);
+      }
     }
     if (p.y > 60 && p.y < 120 && p.x > 180 && p.x < 210) {
+      // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(activeLightLine[i]){
@@ -522,6 +541,7 @@ void loop() {
       }
     }
     if (p.y > 200 && p.y < 260 && p.x > 180 && p.x < 210) {
+      // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(activeLightLine[i]){
@@ -532,6 +552,7 @@ void loop() {
       }
     }
     if (p.y > 260 && p.y < 320 && p.x > 180 && p.x < 210) {
+      // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(activeLightLine[i]){
@@ -540,9 +561,20 @@ void loop() {
           }
         }
       }
+      //Clock setting
+      if(page==5){
+        //increase Year
+        if(clock_tme.Year>2099){
+          clock_tme.Year=2019;
+        } else {
+          clock_tme.Year++;
+        }
+        showClockYear(clock_tme.Year);
+      }
     }
-    // LightTime buttons
+    
     if (p.y > 0 && p.y < 60 && p.x > 150 && p.x < 180) {
+      // LightTime buttons
       if (page == 8) {
          for(int i=0;i<=3;i++){
           if(activeLightLine[i]){
@@ -551,8 +583,19 @@ void loop() {
           }
         }
       }
+      //Clock setting
+      if(page==5){
+        //increase Month
+        if(clock_tme.Month<2){
+          clock_tme.Month=12;
+        } else {
+          clock_tme.Month--;
+        }
+        showClockMonth(clock_tme.Month);
+      }
     }
     if (p.y > 60 && p.y < 120 && p.x > 150 && p.x < 180) {
+      // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(activeLightLine[i]){
@@ -561,9 +604,20 @@ void loop() {
           }
         }
       }
+      //Clock setting
+      if(page==5){
+        //increase Month
+        if(clock_tme.Month>11){
+          clock_tme.Month=1;
+        } else {
+          clock_tme.Month++;
+        }
+        showClockMonth(clock_tme.Month);
+      }
     }
   
    if (p.y > 200 && p.y < 260 && p.x > 150 && p.x < 180) {
+      // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(activeLightLine[i]){
@@ -572,9 +626,20 @@ void loop() {
           }
         }
       }
+      //Clock setting
+      if(page==5){
+        //increase Day
+        if(clock_tme.Day<2){
+          clock_tme.Day=31;
+        } else {
+          clock_tme.Day--;
+        }
+        showClockDay(clock_tme.Day);
+      }
     }
 
    if (p.y > 260 && p.y < 320 && p.x > 150 && p.x < 180) {
+      // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(activeLightLine[i]){
@@ -583,8 +648,71 @@ void loop() {
           }
         }
       }
+      //Clock setting
+      if(page==5){
+        //increase Day
+        if(clock_tme.Day>30){
+          clock_tme.Day=1;
+        } else {
+          clock_tme.Day++;
+        }
+        showClockDay(clock_tme.Day);
+      }
     }
 
+
+    if (p.y > 0 && p.y < 60 && p.x > 120 && p.x < 150) {
+
+      //Clock setting
+      if(page==5){
+        //increase Hour
+        if(clock_tme.Hour<2){
+          clock_tme.Hour=24;
+        } else {
+          clock_tme.Hour--;
+        }
+        showClockHour(clock_tme.Hour);
+      }
+    }
+    if (p.y > 60 && p.y < 120 && p.x > 120 && p.x < 150) {
+      //Clock setting
+      if(page==5){
+        //increase Hour
+        if(clock_tme.Hour>11){
+          clock_tme.Hour=1;
+        } else {
+          clock_tme.Hour++;
+        }
+        showClockHour(clock_tme.Hour);
+      }
+    }
+
+   if (p.y > 200 && p.y < 260 && p.x > 120 && p.x < 150) {
+      //Clock setting
+      if(page==5){
+        //increase Day
+        if(clock_tme.Minute<2){
+          clock_tme.Minute=59;
+        } else {
+          clock_tme.Minute--;
+        }
+        showClockMinutes(clock_tme.Minute);
+      }
+    }
+
+   if (p.y > 260 && p.y < 320 && p.x > 120 && p.x < 150) {
+      //Clock setting
+      if(page==5){
+        //increase Day
+        if(clock_tme.Minute>58){
+          clock_tme.Minute=1;
+        } else {
+          clock_tme.Minute++;
+        }
+        showClockMinutes(clock_tme.Minute);
+      }
+    }
+    
     /*
     // optional buttons
      if (p.y > 3 && p.y < 66 && p.x > 72 && p.x < 126) {
@@ -611,8 +739,15 @@ void beep(int beep_time) {
 }
 
 // Вспомогательная функция печати значения температуры для устрйоства
-int printTemperature(DeviceAddress deviceAddress){
-  
+int printTemperature(DeviceAddress deviceAddress, boolean existing){
+  int tC = (int)dallasSensors.getTempC(deviceAddress);
+  if(existing){
+    if(tC>-126){
+      printMessageLeft(String(tC)+"C", BLUE);
+      tft.drawCircle(35, 210, 2, BLUE);
+    }
+    return;
+  }
   if(count % 100==0){
     if (temp!=tempC){
       printMessageLeft(String(temp/100)+"C", BLUE);
@@ -622,7 +757,7 @@ int printTemperature(DeviceAddress deviceAddress){
     temp=0;
     count=0;
   }
-  int tC = (int)dallasSensors.getTempC(deviceAddress);
+  
   if(tC>-126){
     count++;
     temp+=tC;
@@ -793,22 +928,38 @@ void menu4() {
 }
 void menu5() {
   tft.setTextColor(WHITE);
-  tft.setTextSize(2);
-  int w = 150;
-  int h = 50;
-  button("Menu 5 B1", 0, 20, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 5 B2", 170, 20, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 5 B3", 0, 80, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 5 B4", 170, 80, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 5 B5", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 5 B6", 170, 140, w, h, JJCOLOR, 22, 17, BLACK);
-}
-void schedule(int lineIndex) {
-
-  tft.setTextColor(WHITE);
   
   int w = 60;
   int h = 30;
+
+  tft.setTextSize(3);
+  button("-", 0, 20, w, h, WHITE, 22, 5, RED);
+  button("+", 60, 20, w, h, WHITE, 22, 5, GREEN); 
+  button("-", 200, 20, w, h, WHITE, 22, 5, RED);
+  button("+", 260, 20, w, h, WHITE, 22, 5, GREEN);
+  
+  button("-", 0, 55, w, h, WHITE, 22, 5, RED);
+  button("+", 60, 55, w, h, WHITE, 22, 5, GREEN);
+  button("-", 200, 55, w, h, WHITE, 22, 5, RED);
+  button("+", 260, 55, w, h, WHITE, 22, 5, GREEN);
+  
+  button("-", 0, 90, w, h, WHITE, 22, 5, RED);
+  button("+", 60, 90, w, h, WHITE, 22, 5, GREEN);
+  button("-", 200, 90, w, h, WHITE, 22, 5, RED);
+  button("+", 260, 90, w, h, WHITE, 22, 5, GREEN);
+  
+  tft.drawRect(120, 20, 80, 30, JJCOLOR);
+  tft.drawRect(120, 55, 80, 30, JJCOLOR);
+  tft.drawRect(120, 90, 80, 30, JJCOLOR);
+  
+  copyTME(clock_tme, n_tme);
+  showClockYear(clock_tme.Year);
+  showClockMonth(clock_tme.Month);
+  showClockDay(clock_tme.Day);
+  showClockHour(clock_tme.Hour);
+  showClockMinutes(clock_tme.Minute);
+}
+void schedule(int lineIndex) {
   /*
   tft.setTextSize(2);
   if(lightTimeHoursStart[lineIndex]==0 && startlightTimeMinutesStart[lineIndex]==0){
@@ -816,6 +967,11 @@ void schedule(int lineIndex) {
   } else {
     button("On", 0, 140, 320, h, JJCOLOR, 140, 17, GREEN);
   }*/
+  tft.setTextColor(WHITE);
+  
+  int w = 60;
+  int h = 30;
+
   tft.setTextSize(3);
   button("-", 0, 20, w, h, WHITE, 22, 5, RED);
   button("+", 60, 20, w, h, WHITE, 22, 5, GREEN); 
@@ -850,6 +1006,44 @@ void schedule(int lineIndex) {
   */
 }
 
+void showClockYear(int yearDate) {
+  tft.fillRect(123, 25, 70, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(128, 30);
+  tft.print(String(yearDate+1970));
+}
+void showClockMonth(int monthDate) {
+  tft.fillRect(123, 60, 30, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(128, 65);
+  tft.print(conv_num2char(monthDate));
+  tft.print("-");
+}
+void showClockDay(int dayDate) {
+  tft.fillRect(165, 60, 30, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(165, 65);
+  tft.print(conv_num2char(dayDate));
+}
+void showClockHour(int hourDate) {
+  tft.fillRect(123, 95, 30, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(128, 100);
+  tft.print(conv_num2char(hourDate));
+  tft.print(":");
+}
+void showClockMinutes(int minutesDate) {
+  tft.fillRect(165, 95, 30, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(165, 100);
+  tft.print(conv_num2char(minutesDate));
+}
+
 void showlightTimeHoursStart(int lightTimeH) {
   tft.fillRect(123, 25, 30, 20, GRAY);
   tft.setTextSize(2);
@@ -862,6 +1056,7 @@ void showlightTimeHoursStart(int lightTimeH) {
   tft.print(lightTimeH);
   tft.print(":");
 }
+
 void showlightTimeMinutesStart(int lightTimeM) {
   tft.fillRect(168, 25, 30, 20, GRAY);
   tft.setTextSize(2);
