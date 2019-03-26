@@ -56,7 +56,9 @@ byte PIN_LIGHT_LINE[4] = {PIN_LIGHT_LINE_1, PIN_LIGHT_LINE_2, PIN_LIGHT_LINE_3, 
 /**
  * Pump pin
  */
-#define PIN_PUMP 44
+#define PIN_PUMP_1 44
+
+byte PIN_PUMP[1] = {PIN_PUMP_1};
 
 #define LCD_CS A3 // Chip Select goes to Analog 3
 #define LCD_CD A2 // Command/Data goes to Analog 2
@@ -115,14 +117,27 @@ boolean selectedLightLine[4] = {false,false,false,false};
  */
 boolean activePump[1] = {false};
 /**
- * Test active flag
+ * Pump active
  */
-boolean activeTest = false;
+boolean selectedPump[1] = {false};
+/**
+ * Test light active flag
+ */
+boolean activeLightTest = false;
+/**
+ * Test light active flag
+ */
+boolean activePumpTest = false;
 
 byte lightTimeHoursStart[4] = {0,0,0,0};
 byte lightTimeMinutesStart[4] = {0,0,0,0};
 byte lightTimeHoursEnd[4] = {0,0,0,0};
 byte lightTimeMinutesEnd[4] = {0,0,0,0};
+
+byte pumpTimeHoursStart[1] = {0};
+byte pumpTimeMinutesStart[1] = {0};
+byte pumpTimeHoursEnd[1] = {0};
+byte pumpTimeMinutesEnd[1] = {0};
 
 int tempC;
 int temp;
@@ -163,12 +178,12 @@ void setup(void) {
   pinMode(PIN_LIGHT_LINE[1], OUTPUT);
   pinMode(PIN_LIGHT_LINE[2], OUTPUT);
   pinMode(PIN_LIGHT_LINE[3], OUTPUT);
-  pinMode(PIN_PUMP, OUTPUT);
+  pinMode(PIN_PUMP[0], OUTPUT);
   digitalWrite(PIN_LIGHT_LINE[0], HIGH);
   digitalWrite(PIN_LIGHT_LINE[1], HIGH);
   digitalWrite(PIN_LIGHT_LINE[2], HIGH);
   digitalWrite(PIN_LIGHT_LINE[3], HIGH);
-  digitalWrite(PIN_PUMP, HIGH);
+  digitalWrite(PIN_PUMP[0], HIGH);
   
   lightTimeHoursStart[0] = (byte)EEPROM.read(0);
   lightTimeHoursStart[1] = (byte)EEPROM.read(1);
@@ -187,6 +202,11 @@ void setup(void) {
   lightTimeMinutesEnd[1] = (byte)EEPROM.read(13);
   lightTimeMinutesEnd[2] = (byte)EEPROM.read(14);
   lightTimeMinutesEnd[3] = (byte)EEPROM.read(15);
+
+  pumpTimeHoursStart[0] = (byte)EEPROM.read(16);
+  pumpTimeMinutesStart[0] = (byte)EEPROM.read(17);
+  pumpTimeHoursEnd[0] = (byte)EEPROM.read(18);
+  pumpTimeMinutesEnd[0] = (byte)EEPROM.read(19);
 
   Serial.begin(9600);
   Serial.println("MFA");
@@ -247,11 +267,12 @@ void setup(void) {
   tft.print("    MFA 0.1 Alpha");
   printInitialTime();
   printTemperature(sensorAddress, true);      
-  //run scheduled light lines
-  checkLineSchedule();
+  //run scheduleLightLined light lines
+  checkLightSchedule();
+  checkPumpSchedule();
 }
 
-void checkLineSchedule(){
+void checkLightSchedule(){
   for(int i=0;i<4;i++){
     int minutes = n_tme.Minute+n_tme.Hour*60;
     if(!selectedLightLine[i]){
@@ -262,6 +283,22 @@ void checkLineSchedule(){
       } else {
         digitalWrite(PIN_LIGHT_LINE[i], HIGH);
         activeLightLine[i] = false;
+      }
+    }
+  }
+}
+
+void checkPumpSchedule(){
+  for(int i=0;i<1;i++){
+    int minutes = n_tme.Minute+n_tme.Hour*60;
+    if(!selectedPump[i]){
+      if(minutes>=pumpTimeMinutesStart[i] + pumpTimeHoursStart[i]*60 && minutes<=pumpTimeMinutesEnd[i] + pumpTimeHoursEnd[i]*60){
+        //turn on line
+        digitalWrite(PIN_PUMP[i], LOW);
+        activePump[i] = true;
+      } else {
+        digitalWrite(PIN_PUMP[i], HIGH);
+        activePump[i] = false;
       }
     }
   }
@@ -321,7 +358,8 @@ void loop() {
   printTime();
   dallasSensors.requestTemperatures();
   printTemperature(sensorAddress, false);
-  checkLineSchedule();
+  checkLightSchedule();
+  checkPumpSchedule();
   // we have some minimum pressure we consider 'valid'
   // pressure of 0 means no pressing!
   if (p.z > MINPRESSURE && p.z < MAXPRESSURE) {
@@ -354,7 +392,7 @@ void loop() {
         m3b1action();
       }
       if (page == 2) {
-        m2b1action();
+        showMainPumpButton();
       }
       if (page == 1) {
         showLine1Button();
@@ -446,7 +484,7 @@ void loop() {
         m3b5action();
       }
       if (page == 2) {
-        m2b5action();
+        startPumpTest();
       }
       if (page == 1) {
         startLightLineTest();
@@ -468,10 +506,11 @@ void loop() {
         m3b6action();
       }
       if (page == 2) {
-        m2b6action();
+        showPumpSchedule();
+        printInitialTime();
       }
       if (page == 1) {
-        showLineSchedule();
+        showLightLineSchedule();
         printInitialTime();
       }
       if (page == 0) {
@@ -481,8 +520,19 @@ void loop() {
     }
     // home
     if (p.y > 280 && p.y < 340 && p.x > 0 && p.x < 48) { // if the home icon is pressed
-      if (page == 8) { // if you are leaving the Schedule page
+      if (page = 9){
+        EEPROM.write(16, (byte)pumpTimeHoursStart[0]);
+        EEPROM.write(17, (byte)pumpTimeMinutesStart[0]);
+        EEPROM.write(18, (byte)pumpTimeHoursEnd[0]);
+        EEPROM.write(19, (byte)pumpTimeMinutesEnd[0]);
         
+        printMessage("Settings saved", YELLOW); // display settings saved in message box
+        clearscheduleLightLine(); // erase all the drawings on the settings page
+        resetPumpTest();
+        printInitialTime();
+        printTemperature(sensorAddress, true);
+      }
+      if (page == 8) { // if you are leaving the scheduleLightLine page
         EEPROM.write(0, (byte)lightTimeHoursStart[0]);
         EEPROM.write(1, (byte)lightTimeHoursStart[1]);
         EEPROM.write(2, (byte)lightTimeHoursStart[2]);
@@ -500,20 +550,24 @@ void loop() {
         EEPROM.write(13, (byte)lightTimeMinutesEnd[1]);
         EEPROM.write(14, (byte)lightTimeMinutesEnd[2]);
         EEPROM.write(15, (byte)lightTimeMinutesEnd[3]);
+       
         printMessage("Settings saved", YELLOW); // display settings saved in message box
-        clearSchedule(); // erase all the drawings on the settings page
-        resetTest();
+        clearscheduleLightLine(); // erase all the drawings on the settings page
+        resetLightTest();
         printInitialTime();
         printTemperature(sensorAddress, true);
       }
       if (page == 5) { // if you are leaving the Clock settings page
         DS3231.write(clock_tme);
         printMessage("Settings saved", YELLOW); // display settings saved in message box
-        clearSchedule(); // erase all the drawings on the settings page
-        resetTest();
+        clearscheduleLightLine(); // erase all the drawings on the settings page
+        resetLightTest();
         printDate(clock_tme.Day, clock_tme.Month, clock_tme.Year, WHITE);
         printInitialTime();
         printTemperature(sensorAddress, true);
+      }
+      if(page=1){
+        resetLightTest();
       }
       if (page == 0) { // if you are already on the home page
         drawhomeiconred(); // draw the home icon red
@@ -533,11 +587,20 @@ void loop() {
     }
     
     if (p.y > 0 && p.y < 60 && p.x > 180 && p.x < 210) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            decPumpTimeHoursStart(i);
+            break;
+          }
+        }
+      }
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(selectedLightLine[i]){
-            declightTimeHoursStart(i);
+            decLightTimeHoursStart(i);
             break;
           }
         }
@@ -554,22 +617,40 @@ void loop() {
       }
     }
     if (p.y > 60 && p.y < 120 && p.x > 180 && p.x < 210) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            incPumpTimeHoursStart(i);
+            break;
+          }
+        }
+      }
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(selectedLightLine[i]){
-            inclightTimeHoursStart(i);
+            incLightTimeHoursStart(i);
             break;
           }
         }
       }
     }
     if (p.y > 200 && p.y < 260 && p.x > 180 && p.x < 210) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            decPumpTimeMinutesStart(i);
+            break;
+          }
+        }
+      }
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(selectedLightLine[i]){
-            declightTimeMinutesStart(i);
+            decLightTimeMinutesStart(i);
             break;
           }
         }
@@ -577,10 +658,19 @@ void loop() {
     }
     if (p.y > 260 && p.y < 320 && p.x > 180 && p.x < 210) {
       // LightTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            incPumpTimeMinutesStart(i);
+            break;
+          }
+        }
+      }
+      // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(selectedLightLine[i]){
-            inclightTimeMinutesStart(i);
+            incLightTimeMinutesStart(i);
             break;
           }
         }
@@ -598,11 +688,20 @@ void loop() {
     }
     
     if (p.y > 0 && p.y < 60 && p.x > 150 && p.x < 180) {
+      // PumpTime buttons
+      if (page == 9) {
+         for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            decPumpTimeHoursEnd(i);
+            break;
+          }
+        }
+      }
       // LightTime buttons
       if (page == 8) {
          for(int i=0;i<=3;i++){
-          if(activeLightLine[i]){
-            declightTimeHoursEnd(i);
+          if(selectedLightLine[i]){
+            decLightTimeHoursEnd(i);
             break;
           }
         }
@@ -619,11 +718,20 @@ void loop() {
       }
     }
     if (p.y > 60 && p.y < 120 && p.x > 150 && p.x < 180) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            incPumpTimeHoursEnd(i);
+            break;
+          }
+        }
+      }
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
-          if(activeLightLine[i]){
-            inclightTimeHoursEnd(i);
+          if(selectedLightLine[i]){
+            incLightTimeHoursEnd(i);
             break;
           }
         }
@@ -641,11 +749,20 @@ void loop() {
     }
   
    if (p.y > 200 && p.y < 260 && p.x > 150 && p.x < 180) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            decPumpTimeMinutesEnd(i);
+            break;
+          }
+        }
+      }
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(selectedLightLine[i]){
-            declightTimeMinutesEnd(i);
+            decLightTimeMinutesEnd(i);
             break;
           }
         }
@@ -663,11 +780,20 @@ void loop() {
     }
 
    if (p.y > 260 && p.y < 320 && p.x > 150 && p.x < 180) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            incPumpTimeMinutesEnd(i);
+            break;
+          }
+        }
+      }
       // LightTime buttons
       if (page == 8) {
         for(int i=0;i<=3;i++){
           if(selectedLightLine[i]){
-            inclightTimeMinutesEnd(i);
+            incLightTimeMinutesEnd(i);
             break;
           }
         }
@@ -710,8 +836,7 @@ void loop() {
         showClockHour(clock_tme.Hour);
       }
     }
-
-   if (p.y > 200 && p.y < 260 && p.x > 120 && p.x < 150) {
+    if (p.y > 200 && p.y < 260 && p.x > 120 && p.x < 150) {
       //Clock setting
       if(page==5){
         //increase Day
@@ -723,8 +848,7 @@ void loop() {
         showClockMinutes(clock_tme.Minute);
       }
     }
-
-   if (p.y > 260 && p.y < 320 && p.x > 120 && p.x < 150) {
+    if (p.y > 260 && p.y < 320 && p.x > 120 && p.x < 150) {
       //Clock setting
       if(page==5){
         //increase Day
@@ -763,7 +887,7 @@ void beep(int beep_time) {
 }
 
 // Вспомогательная функция печати значения температуры для устрйоства
-int printTemperature(DeviceAddress deviceAddress, boolean existing){
+void printTemperature(DeviceAddress deviceAddress, boolean existing){
   int tC = (int)dallasSensors.getTempC(deviceAddress);
   if(existing){
     if(tC>-126){
@@ -872,7 +996,7 @@ void clearcenter() { // the reason for so many small "boxes" is that it's faster
   tft.fillRect(22, 157, 106, 16, BLACK);
   tft.fillRect(192, 157, 106, 16, BLACK);
 }
-void clearSchedule() { // this is used to erase the extra drawings when exiting the settings page
+void clearscheduleLightLine() { // this is used to erase the extra drawings when exiting the settings page
   tft.fillRect(0, 20, 320, 180, BLACK);
   delay(500);
   clearmessage();
@@ -985,7 +1109,7 @@ void menu5() {
   showClockHour(clock_tme.Hour);
   showClockMinutes(clock_tme.Minute);
 }
-void schedule(int lineIndex) {
+void scheduleLightLine(int lineIndex) {
   /*
   tft.setTextSize(2);
   if(lightTimeHoursStart[lineIndex]==0 && startlightTimeMinutesStart[lineIndex]==0){
@@ -1030,6 +1154,33 @@ void schedule(int lineIndex) {
   itoa (battpercent, battpercenttxt, 10);
   tft.print(102, 213, battpercenttxt, YELLOW, 2);
   */
+}
+
+void schedulePump(int pumpIndex) {
+
+  tft.setTextColor(WHITE);
+  
+  int w = 60;
+  int h = 30;
+
+  tft.setTextSize(3);
+  button("-", 0, 20, w, h, WHITE, 22, 5, RED);
+  button("+", 60, 20, w, h, WHITE, 22, 5, GREEN); 
+  button("-", 200, 20, w, h, WHITE, 22, 5, RED);
+  button("+", 260, 20, w, h, WHITE, 22, 5, GREEN);
+  
+  button("-", 0, 55, w, h, WHITE, 22, 5, RED);
+  button("+", 60, 55, w, h, WHITE, 22, 5, GREEN);
+  button("-", 200, 55, w, h, WHITE, 22, 5, RED);
+  button("+", 260, 55, w, h, WHITE, 22, 5, GREEN);
+
+  tft.drawRect(120, 20, 80, 30, JJCOLOR);
+  tft.drawRect(120, 55, 80, 30, JJCOLOR);
+
+  showPumpTimeHoursStart(pumpTimeHoursStart[pumpIndex]);
+  showPumpTimeMinutesStart(pumpTimeMinutesStart[pumpIndex]);
+  showPumpTimeHoursEnd(pumpTimeHoursEnd[pumpIndex]);
+  showPumpTimeMinutesEnd(pumpTimeMinutesEnd[pumpIndex]);
 }
 
 void showClockYear(int yearDate) {
@@ -1111,10 +1262,23 @@ void showlightTimeMinutesEnd(int lightTimeM) {
   tft.print(conv_num2char(lightTimeM));
 }
 
-void inclightTimeMinutesStart(int lineIndex) { // sleep increese adjustment
+void showPumpTimeHoursStart(int pumpTimeH) {
+  showlightTimeHoursStart(pumpTimeH);
+}
+void showPumpTimeHoursEnd(int pumpTimeH) {
+  showlightTimeHoursEnd(pumpTimeH);
+}
+void showPumpTimeMinutesStart(int pumpTimeM) {
+  showlightTimeMinutesStart(pumpTimeM);
+}
+void showPumpTimeMinutesEnd(int pumpTimeM) {
+  showlightTimeMinutesEnd(pumpTimeM);
+}
+
+void incLightTimeMinutesStart(int lineIndex) { // sleep increese adjustment
   int h = 50;
   if (lightTimeMinutesStart[lineIndex] < 59) {
-    lightTimeMinutesStart[lineIndex] = lightTimeMinutesStart[lineIndex]+1;
+    lightTimeMinutesStart[lineIndex]++;
   } else {
     lightTimeMinutesStart[lineIndex]=0;
   }
@@ -1124,10 +1288,10 @@ void inclightTimeMinutesStart(int lineIndex) { // sleep increese adjustment
   }
   delay(350);
 }
-void declightTimeMinutesStart(int lineIndex) { // sleep decreese adjustment
+void decLightTimeMinutesStart(int lineIndex) { // sleep decreese adjustment
   int h = 50;
   if (lightTimeMinutesStart[lineIndex] > 0) {
-    lightTimeMinutesStart[lineIndex] = lightTimeMinutesStart[lineIndex]-1;
+    lightTimeMinutesStart[lineIndex]--;
   } else {
     lightTimeMinutesStart[lineIndex]=59;
   }
@@ -1137,10 +1301,10 @@ void declightTimeMinutesStart(int lineIndex) { // sleep decreese adjustment
   }
   delay(350);
 }
-void inclightTimeHoursStart(int lineIndex) { // sleep increese adjustment
+void incLightTimeHoursStart(int lineIndex) { // sleep increese adjustment
   int h = 50;
   if (lightTimeHoursStart[lineIndex] < 23) {
-    lightTimeHoursStart[lineIndex] = lightTimeHoursStart[lineIndex]+1;
+    lightTimeHoursStart[lineIndex]++;
   } else {
     lightTimeHoursStart[lineIndex]=0;
   }
@@ -1150,10 +1314,10 @@ void inclightTimeHoursStart(int lineIndex) { // sleep increese adjustment
   }
   delay(350);
 }
-void declightTimeHoursStart(int lineIndex) { // sleep decreese adjustment
+void decLightTimeHoursStart(int lineIndex) { // sleep decreese adjustment
   int h = 50;
   if (lightTimeHoursStart[lineIndex] > 0) {
-    lightTimeHoursStart[lineIndex] = lightTimeHoursStart[lineIndex]-1;
+    lightTimeHoursStart[lineIndex]--;
   } else {
     lightTimeHoursStart[lineIndex]=23;
   }
@@ -1167,10 +1331,10 @@ void declightTimeHoursStart(int lineIndex) { // sleep decreese adjustment
 
 
 
-void inclightTimeMinutesEnd(int lineIndex) { // sleep increese adjustment
+void incLightTimeMinutesEnd(int lineIndex) { // sleep increese adjustment
   int h = 50;
   if (lightTimeMinutesEnd[lineIndex] < 59) {
-    lightTimeMinutesEnd[lineIndex] = lightTimeMinutesEnd[lineIndex]+1;
+    lightTimeMinutesEnd[lineIndex]++;
   } else {
     lightTimeMinutesEnd[lineIndex]=0;
   }
@@ -1180,10 +1344,10 @@ void inclightTimeMinutesEnd(int lineIndex) { // sleep increese adjustment
   }
   delay(350);
 }
-void declightTimeMinutesEnd(int lineIndex) { // sleep decreese adjustment
+void decLightTimeMinutesEnd(int lineIndex) { // sleep decreese adjustment
   int h = 50;
   if (lightTimeMinutesEnd[lineIndex] > 0) {
-    lightTimeMinutesEnd[lineIndex] = lightTimeMinutesEnd[lineIndex]-1;
+    lightTimeMinutesEnd[lineIndex]--;
   } else {
     lightTimeMinutesEnd[lineIndex]=59;
   }
@@ -1193,10 +1357,10 @@ void declightTimeMinutesEnd(int lineIndex) { // sleep decreese adjustment
   }
   delay(350);
 }
-void inclightTimeHoursEnd(int lineIndex) { // sleep increese adjustment
+void incLightTimeHoursEnd(int lineIndex) { // sleep increese adjustment
   int h = 50;
   if (lightTimeHoursEnd[lineIndex] < 23) {
-    lightTimeHoursEnd[lineIndex] = lightTimeHoursEnd[lineIndex]+1;
+    lightTimeHoursEnd[lineIndex]++;
   } else {
     lightTimeHoursEnd[lineIndex]=0;
   }
@@ -1206,10 +1370,10 @@ void inclightTimeHoursEnd(int lineIndex) { // sleep increese adjustment
   }
   delay(350);
 }
-void declightTimeHoursEnd(int lineIndex) { // sleep decreese adjustment
+void decLightTimeHoursEnd(int lineIndex) { // sleep decreese adjustment
   int h = 50;
   if (lightTimeHoursEnd[lineIndex] > 0) {
-    lightTimeHoursEnd[lineIndex] = lightTimeHoursEnd[lineIndex]-1;
+    lightTimeHoursEnd[lineIndex]--;
   } else {
     lightTimeHoursEnd[lineIndex]=23;
   }
@@ -1221,6 +1385,114 @@ void declightTimeHoursEnd(int lineIndex) { // sleep decreese adjustment
 }
 
 
+void incPumpTimeMinutesStart(int lineIndex) { // sleep increese adjustment
+  int h = 50;
+  if (pumpTimeMinutesStart[lineIndex] < 59) {
+    pumpTimeMinutesStart[lineIndex]++;
+  } else {
+    pumpTimeMinutesStart[lineIndex]=0;
+  }
+  showPumpTimeMinutesStart(pumpTimeMinutesStart[lineIndex]);
+  if(pumpTimeHoursStart[lineIndex]==0 && pumpTimeMinutesStart[lineIndex]==0){
+    showPumpTimeHoursStart(0);
+  }
+  delay(350);
+}
+void decPumpTimeMinutesStart(int lineIndex) { // sleep decreese adjustment
+  int h = 50;
+  if (pumpTimeMinutesStart[lineIndex] > 0) {
+    pumpTimeMinutesStart[lineIndex]--;
+  } else {
+    pumpTimeMinutesStart[lineIndex]=59;
+  }
+  showPumpTimeMinutesStart(pumpTimeMinutesStart[lineIndex]);
+  if(pumpTimeHoursStart[lineIndex]==0 && pumpTimeMinutesStart[lineIndex]==0){
+    showPumpTimeHoursStart(0);
+  }
+  delay(350);
+}
+void incPumpTimeHoursStart(int lineIndex) { // sleep increese adjustment
+  int h = 50;
+  if (pumpTimeHoursStart[lineIndex] < 23) {
+    pumpTimeHoursStart[lineIndex]++;
+  } else {
+    pumpTimeHoursStart[lineIndex]=0;
+  }
+  showPumpTimeHoursStart(pumpTimeHoursStart[lineIndex]);
+  if(pumpTimeHoursStart[lineIndex]==0 && pumpTimeMinutesStart[lineIndex]==0){
+    showPumpTimeMinutesStart(0);
+  }
+  delay(350);
+}
+void decPumpTimeHoursStart(int lineIndex) { // sleep decreese adjustment
+  int h = 50;
+  if (pumpTimeHoursStart[lineIndex] > 0) {
+    pumpTimeHoursStart[lineIndex]--;
+  } else {
+    pumpTimeHoursStart[lineIndex]=23;
+  }
+  showPumpTimeHoursStart(pumpTimeHoursStart[lineIndex]);  
+  if(pumpTimeHoursStart[lineIndex]==0 && pumpTimeMinutesStart[lineIndex]==0){
+    showPumpTimeMinutesStart(0);
+  }
+  delay(350);
+}
+
+
+
+
+void incPumpTimeMinutesEnd(int lineIndex) { // sleep increese adjustment
+  int h = 50;
+  if (pumpTimeMinutesEnd[lineIndex] < 59) {
+    pumpTimeMinutesEnd[lineIndex]++;
+  } else {
+    pumpTimeMinutesEnd[lineIndex]=0;
+  }
+  showPumpTimeMinutesEnd(pumpTimeMinutesEnd[lineIndex]);
+  if(pumpTimeHoursEnd[lineIndex]==0 && pumpTimeMinutesEnd[lineIndex]==0){
+    showPumpTimeHoursEnd(0);
+  }
+  delay(350);
+}
+void decPumpTimeMinutesEnd(int lineIndex) { // sleep decreese adjustment
+  int h = 50;
+  if (pumpTimeMinutesEnd[lineIndex] > 0) {
+    pumpTimeMinutesEnd[lineIndex]--;
+  } else {
+    pumpTimeMinutesEnd[lineIndex]=59;
+  }
+  showPumpTimeMinutesEnd(pumpTimeMinutesEnd[lineIndex]);
+  if(pumpTimeHoursEnd[lineIndex]==0 && pumpTimeMinutesEnd[lineIndex]==0){
+    showPumpTimeHoursEnd(0);
+  }
+  delay(350);
+}
+void incPumpTimeHoursEnd(int lineIndex) { // sleep increese adjustment
+  int h = 50;
+  if (pumpTimeHoursEnd[lineIndex] < 23) {
+    pumpTimeHoursEnd[lineIndex]++;
+  } else {
+    pumpTimeHoursEnd[lineIndex]=0;
+  }
+  showPumpTimeHoursEnd(pumpTimeHoursEnd[lineIndex]);
+  if(pumpTimeHoursEnd[lineIndex]==0 && pumpTimeMinutesEnd[lineIndex]==0){
+    showPumpTimeMinutesEnd(0);
+  }
+  delay(350);
+}
+void decPumpTimeHoursEnd(int lineIndex) { // sleep decreese adjustment
+  int h = 50;
+  if (pumpTimeHoursEnd[lineIndex] > 0) {
+    pumpTimeHoursEnd[lineIndex]--;
+  } else {
+    pumpTimeHoursEnd[lineIndex]=23;
+  }
+  showPumpTimeHoursEnd(pumpTimeHoursEnd[lineIndex]);  
+  if(pumpTimeHoursEnd[lineIndex]==0 && pumpTimeMinutesEnd[lineIndex]==0){
+    showPumpTimeMinutesEnd(0);
+  }
+  delay(350);
+}
 
 
 void option3down() { // adjust option 3 down in the settings screen
@@ -1293,8 +1565,8 @@ void startLightLineTest() {
   //Light test
   int w = 150;
   int h = 50;
-  activeTest = !activeTest;
-  if(activeTest && (selectedLightLine[0] || selectedLightLine[1] || selectedLightLine[2] || selectedLightLine[3])){
+  activeLightTest = !activeLightTest;
+  if(activeLightTest && (selectedLightLine[0] || selectedLightLine[1] || selectedLightLine[2] || selectedLightLine[3])){
       for(int i=0;i<4;i++){
         if(selectedLightLine[i]){
           digitalWrite(PIN_LIGHT_LINE[i], LOW);
@@ -1311,53 +1583,75 @@ void startLightLineTest() {
     }
     button("Test", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
   }
-  
 }
-void showLineSchedule() {
+void showLightLineSchedule() {
   //Light schedule
   for(int i=0;i<=3;i++){
     if(selectedLightLine[i]){
       page=8;
-      clearSchedule();
-      schedule(i);
+      clearscheduleLightLine();
+      scheduleLightLine(i);
       break;
     }
   }
 }
-void m2b1action() {
-  int w = 150;
-  int h = 50;
-  activePump[0]=!activePump[0];
-  if(activePump[0]){
-    button("Main pump", 0, 20, w, h, JJCOLOR, 22, 17, JJORNG);
-  } else {
-    button("Main pump", 0, 20, w, h, JJCOLOR, 22, 17, BLACK);
+void showPumpSchedule() {
+  //Pump schedule
+  for(int i=0;i<1;i++){
+    if(selectedPump[i]){
+      page=9;
+      clearscheduleLightLine();
+      schedulePump(i);
+      break;
+    }
   }
 }
+void showMainPumpButton() {
+  int w = 150;
+  int h = 50;
+  selectedPump[0]=!selectedPump[0];
+  if(selectedPump[0]){
+    button("Main pump", 0, 20, w, h, JJCOLOR, 22, 17, GREEN);
+  } else {
+    if(activePump[0]){
+      button("Main pump", 0, 20, w, h, JJCOLOR, 22, 17, JJORNG);
+    } else {
+      button("Main pump", 0, 20, w, h, JJCOLOR, 22, 17, BLACK);
+    }
+  }
+}
+
 void m2b2action() {
 }
 void m2b3action() {
 }
 void m2b4action() {
 }
-void m2b5action() {
+void startPumpTest() {
   //Pump test
   int w = 150;
   int h = 50;
-  activeTest = !activeTest;
-  if(activeTest && activePump[0]){
-      if(activePump[0]){
-        digitalWrite(PIN_PUMP, LOW);
+  activePumpTest = !activePumpTest;
+  if(activePumpTest && selectedPump[0]){
+      for(int i=0;i<1;i++){
+        if(selectedPump[i]){
+          digitalWrite(PIN_PUMP[i], LOW);
+        }
       }
       button("Test", 0, 140, w, h, JJCOLOR, 22, 17, GREEN);
   } else {
-     digitalWrite(PIN_PUMP, HIGH);
-     button("Test", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
+    if(selectedPump[0]){
+      for(int i=0;i<1;i++){
+        if(selectedPump[i]){
+          digitalWrite(PIN_PUMP[i], HIGH);
+        }
+      }      
+    }
+    button("Test", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
   }
+ 
 }
-void m2b6action() {
-  //pump schedule
-}
+
 void m3b1action() {
 }
 void m3b2action() {
@@ -1512,16 +1806,7 @@ void printMessageRight(String message, int color){
   tft.setCursor(60, 213);
   tft.print(message);
 }
-/**
- * Reset test values
- */
-void resetTest(){
-  activeTest = false;
-  selectedLightLine[0]=false;
-  selectedLightLine[1]=false;
-  selectedLightLine[2]=false;
-  selectedLightLine[3]=false;
-}
+
 void drawbatt() {
   battv = readVcc(); // read the voltage
   if (battv < battold) { // if the voltage goes down, erase the inside of the battery
@@ -1572,4 +1857,20 @@ String conv_num2char(int min)
     return "0"+String(min);
   }
 }
-
+/**
+ * Reset test values
+ */
+void resetLightTest(){
+  activeLightTest = false;
+  selectedLightLine[0]=false;
+  selectedLightLine[1]=false;
+  selectedLightLine[2]=false;
+  selectedLightLine[3]=false;
+}
+/**
+ * Reset test values
+ */
+void resetPumpTest(){
+  activePumpTest = false;
+  selectedPump[0]=false;
+}
