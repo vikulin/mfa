@@ -139,6 +139,10 @@ byte pumpTimeMinutesStart[1] = {0};
 byte pumpTimeHoursEnd[1] = {0};
 byte pumpTimeMinutesEnd[1] = {0};
 
+byte pumpTimePeriod[1] = {0};
+
+byte pumpDuration[1] = {0};
+
 int tempC;
 int temp;
 int count = 0;
@@ -208,6 +212,10 @@ void setup(void) {
   pumpTimeHoursEnd[0] = (byte)EEPROM.read(18);
   pumpTimeMinutesEnd[0] = (byte)EEPROM.read(19);
 
+  pumpTimePeriod[0] = (byte)EEPROM.read(20);
+
+  pumpDuration[0] = (byte)EEPROM.read(21);
+
   Serial.begin(9600);
   Serial.println("MFA");
   Serial.println("Vadym Vikulin  -  2019");
@@ -262,7 +270,7 @@ void setup(void) {
     Serial.println("Не можем найти первое устройство");
   }
   dallasSensors.setResolution(sensorAddress, 12);
-  //beep(100);
+
   printDate(n_tme.Day, n_tme.Month, n_tme.Year, WHITE);
   tft.print("    MFA 0.1 Alpha");
   printInitialTime();
@@ -270,6 +278,7 @@ void setup(void) {
   //run scheduleLightLined light lines
   checkLightSchedule();
   checkPumpSchedule();
+  //beep(100);
 }
 
 void checkLightSchedule(){
@@ -291,11 +300,19 @@ void checkLightSchedule(){
 void checkPumpSchedule(){
   for(int i=0;i<1;i++){
     int minutes = n_tme.Minute+n_tme.Hour*60;
+    int start = pumpTimeMinutesStart[i] + pumpTimeHoursStart[i]*60;
     if(!selectedPump[i]){
-      if(minutes>=pumpTimeMinutesStart[i] + pumpTimeHoursStart[i]*60 && minutes<=pumpTimeMinutesEnd[i] + pumpTimeHoursEnd[i]*60){
-        //turn on line
-        digitalWrite(PIN_PUMP[i], LOW);
-        activePump[i] = true;
+      if(minutes >= start && minutes<=pumpTimeMinutesEnd[i] + pumpTimeHoursEnd[i]*60){
+        //check period and duration
+        Serial.println((minutes - start) % (pumpTimePeriod[i] + pumpDuration[i]));
+        if((minutes - start) % (pumpTimePeriod[i] + pumpDuration[i])<pumpDuration[i]){
+          //turn on line
+          digitalWrite(PIN_PUMP[i], LOW);
+          activePump[i] = true;
+        } else {
+          digitalWrite(PIN_PUMP[i], HIGH);
+          activePump[i] = false;
+        }
       } else {
         digitalWrite(PIN_PUMP[i], HIGH);
         activePump[i] = false;
@@ -526,6 +543,8 @@ void loop() {
         EEPROM.write(17, (byte)pumpTimeMinutesStart[0]);
         EEPROM.write(18, (byte)pumpTimeHoursEnd[0]);
         EEPROM.write(19, (byte)pumpTimeMinutesEnd[0]);
+        EEPROM.write(20, (byte)pumpTimePeriod[0]);
+        EEPROM.write(21, (byte)pumpDuration[0]);
         
         printMessage("Pump saved", YELLOW); // display settings saved in message box
         clearscheduleLightLine(); // erase all the drawings on the settings page
@@ -612,7 +631,7 @@ void loop() {
         if(clock_tme.Year<50){
           clock_tme.Year=130;
         } else {
-          clock_tme.Year = clock_tme.Year-1;
+          clock_tme.Year--;
         }
         showClockYear(clock_tme.Year);
       }
@@ -682,7 +701,7 @@ void loop() {
         if(clock_tme.Year>130){
           clock_tme.Year=49;
         } else {
-          clock_tme.Year = clock_tme.Year+1;
+          clock_tme.Year++;
         }
         showClockYear(clock_tme.Year);
       }
@@ -811,9 +830,16 @@ void loop() {
       }
     }
 
-
     if (p.y > 0 && p.y < 60 && p.x > 120 && p.x < 150) {
-
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            decPumpTimePeriod(i);
+            break;
+          }
+        }
+      }
       //Clock setting
       if(page==5){
         //increase Hour
@@ -840,7 +866,7 @@ void loop() {
     if (p.y > 200 && p.y < 260 && p.x > 120 && p.x < 150) {
       //Clock setting
       if(page==5){
-        //increase Day
+        //increase Minutes
         if(clock_tme.Minute<2){
           clock_tme.Minute=59;
         } else {
@@ -850,9 +876,18 @@ void loop() {
       }
     }
     if (p.y > 260 && p.y < 320 && p.x > 120 && p.x < 150) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            incPumpTimePeriod(i);
+            break;
+          }
+        }
+      }
       //Clock setting
       if(page==5){
-        //increase Day
+        //increase Minute
         if(clock_tme.Minute>58){
           clock_tme.Minute=1;
         } else {
@@ -861,20 +896,28 @@ void loop() {
         showClockMinutes(clock_tme.Minute);
       }
     }
-    
-    /*
-    // optional buttons
-     if (p.y > 3 && p.y < 66 && p.x > 72 && p.x < 126) {
-     if (page == 6) {
-     option3down();
-     }
-     }
-     if (p.y > 269 && p.y < 324 && p.x > 72 && p.x < 126) {
-     if (page == 6) {
-     option3up();
-     }
-     }
-     */
+    if (p.y > 260 && p.y < 320 && p.x > 90 && p.x < 120) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            incPumpDuration(i);
+            break;
+          }
+        }
+      }
+    }
+    if (p.y > 0 && p.y < 60 && p.x > 90 && p.x < 120) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            decPumpDuration(i);
+            break;
+          }
+        }
+      }
+    }
   }
   if(currenttime - prevbatt > battcheck) {
     drawbatt();
@@ -976,7 +1019,7 @@ void redraw() { // redraw the page
     menu4();
   }
   if (page == 5) {
-    menu5();
+    clockSettings();
   }
   if (page == 6) {
     //settingsscr();
@@ -1083,7 +1126,7 @@ void menu4() {
   button("Test", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
   button("Schedule", 170, 140, w, h, JJCOLOR, 22, 17, BLACK);
 }
-void menu5() {
+void clockSettings() {
   tft.setTextColor(WHITE);
   
   int w = 60;
@@ -1091,8 +1134,7 @@ void menu5() {
 
   tft.setTextSize(3);
   button("-", 0, 20, w, h, WHITE, 22, 5, RED);
-  button("+", 60, 20, w, h, WHITE, 22, 5, GREEN); 
-  button("-", 200, 20, w, h, WHITE, 22, 5, RED);
+
   button("+", 260, 20, w, h, WHITE, 22, 5, GREEN);
   
   button("-", 0, 55, w, h, WHITE, 22, 5, RED);
@@ -1181,13 +1223,24 @@ void schedulePump(int pumpIndex) {
   button("-", 200, 55, w, h, WHITE, 22, 5, RED);
   button("+", 260, 55, w, h, WHITE, 22, 5, GREEN);
 
+  button("-", 0, 90, w, h, WHITE, 22, 5, RED);
+  button("+", 260, 90, w, h, WHITE, 22, 5, GREEN);
+
+  button("-", 0, 125, w, h, WHITE, 22, 5, RED);
+  button("+", 260, 125, w, h, WHITE, 22, 5, GREEN);
+
   tft.drawRect(120, 20, 80, 30, JJCOLOR);
   tft.drawRect(120, 55, 80, 30, JJCOLOR);
+  tft.drawRect(120, 90, 80, 30, JJCOLOR);
+  tft.drawRect(120, 125, 80, 30, JJCOLOR);
 
   showPumpTimeHoursStart(pumpTimeHoursStart[pumpIndex]);
   showPumpTimeMinutesStart(pumpTimeMinutesStart[pumpIndex]);
   showPumpTimeHoursEnd(pumpTimeHoursEnd[pumpIndex]);
   showPumpTimeMinutesEnd(pumpTimeMinutesEnd[pumpIndex]);
+
+  showPumpTimePeriod(pumpTimePeriod[pumpIndex]);
+  showPumpDuration(pumpDuration[pumpIndex]);
 }
 
 void showClockYear(int yearDate) {
@@ -1211,6 +1264,20 @@ void showClockDay(int dayDate) {
   tft.setTextColor(WHITE);
   tft.setCursor(165, 65);
   tft.print(conv_num2char(dayDate));
+}
+void showPumpTimePeriod(int period){
+  tft.fillRect(123, 95, 70, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(128, 100);
+  tft.print(period);
+}
+void showPumpDuration(int duration){
+  tft.fillRect(123, 130, 70, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(128, 135);
+  tft.print(duration);
 }
 void showClockHour(int hourDate) {
   tft.fillRect(123, 95, 30, 20, GRAY);
@@ -1282,8 +1349,31 @@ void showPumpTimeMinutesEnd(int pumpTimeM) {
   showLightTimeMinutesEnd(pumpTimeM);
 }
 
+void decPumpTimePeriod(int pumpIndex){
+  pumpTimePeriod[pumpIndex]--;
+  showPumpTimePeriod(pumpTimePeriod[pumpIndex]);
+  delay(350);
+}
+
+void incPumpTimePeriod(int pumpIndex){
+  pumpTimePeriod[pumpIndex]++;
+  showPumpTimePeriod(pumpTimePeriod[pumpIndex]);
+  delay(350);
+}
+
+void decPumpDuration(int pumpIndex){
+  pumpDuration[pumpIndex]--;
+  showPumpDuration(pumpDuration[pumpIndex]);
+  delay(350);
+}
+
+void incPumpDuration(int pumpIndex){
+  pumpDuration[pumpIndex]++;
+  showPumpDuration(pumpDuration[pumpIndex]);
+  delay(350);
+}
+
 void incLightTimeMinutesStart(int lineIndex) { // sleep increese adjustment
-  int h = 50;
   if (lightTimeMinutesStart[lineIndex] < 59) {
     lightTimeMinutesStart[lineIndex]++;
   } else {
@@ -1296,7 +1386,6 @@ void incLightTimeMinutesStart(int lineIndex) { // sleep increese adjustment
   delay(350);
 }
 void decLightTimeMinutesStart(int lineIndex) { // sleep decreese adjustment
-  int h = 50;
   if (lightTimeMinutesStart[lineIndex] > 0) {
     lightTimeMinutesStart[lineIndex]--;
   } else {
@@ -1309,7 +1398,6 @@ void decLightTimeMinutesStart(int lineIndex) { // sleep decreese adjustment
   delay(350);
 }
 void incLightTimeHoursStart(int lineIndex) { // sleep increese adjustment
-  int h = 50;
   if (lightTimeHoursStart[lineIndex] < 23) {
     lightTimeHoursStart[lineIndex]++;
   } else {
@@ -1322,7 +1410,6 @@ void incLightTimeHoursStart(int lineIndex) { // sleep increese adjustment
   delay(350);
 }
 void decLightTimeHoursStart(int lineIndex) { // sleep decreese adjustment
-  int h = 50;
   if (lightTimeHoursStart[lineIndex] > 0) {
     lightTimeHoursStart[lineIndex]--;
   } else {
@@ -1339,7 +1426,6 @@ void decLightTimeHoursStart(int lineIndex) { // sleep decreese adjustment
 
 
 void incLightTimeMinutesEnd(int lineIndex) { // sleep increese adjustment
-  int h = 50;
   if (lightTimeMinutesEnd[lineIndex] < 59) {
     lightTimeMinutesEnd[lineIndex]++;
   } else {
@@ -1352,7 +1438,6 @@ void incLightTimeMinutesEnd(int lineIndex) { // sleep increese adjustment
   delay(350);
 }
 void decLightTimeMinutesEnd(int lineIndex) { // sleep decreese adjustment
-  int h = 50;
   if (lightTimeMinutesEnd[lineIndex] > 0) {
     lightTimeMinutesEnd[lineIndex]--;
   } else {
@@ -1365,7 +1450,6 @@ void decLightTimeMinutesEnd(int lineIndex) { // sleep decreese adjustment
   delay(350);
 }
 void incLightTimeHoursEnd(int lineIndex) { // sleep increese adjustment
-  int h = 50;
   if (lightTimeHoursEnd[lineIndex] < 23) {
     lightTimeHoursEnd[lineIndex]++;
   } else {
@@ -1378,7 +1462,6 @@ void incLightTimeHoursEnd(int lineIndex) { // sleep increese adjustment
   delay(350);
 }
 void decLightTimeHoursEnd(int lineIndex) { // sleep decreese adjustment
-  int h = 50;
   if (lightTimeHoursEnd[lineIndex] > 0) {
     lightTimeHoursEnd[lineIndex]--;
   } else {
@@ -1393,7 +1476,6 @@ void decLightTimeHoursEnd(int lineIndex) { // sleep decreese adjustment
 
 
 void incPumpTimeMinutesStart(int lineIndex) { // sleep increese adjustment
-  int h = 50;
   if (pumpTimeMinutesStart[lineIndex] < 59) {
     pumpTimeMinutesStart[lineIndex]++;
   } else {
@@ -1406,7 +1488,6 @@ void incPumpTimeMinutesStart(int lineIndex) { // sleep increese adjustment
   delay(350);
 }
 void decPumpTimeMinutesStart(int lineIndex) { // sleep decreese adjustment
-  int h = 50;
   if (pumpTimeMinutesStart[lineIndex] > 0) {
     pumpTimeMinutesStart[lineIndex]--;
   } else {
@@ -1419,7 +1500,6 @@ void decPumpTimeMinutesStart(int lineIndex) { // sleep decreese adjustment
   delay(350);
 }
 void incPumpTimeHoursStart(int lineIndex) { // sleep increese adjustment
-  int h = 50;
   if (pumpTimeHoursStart[lineIndex] < 23) {
     pumpTimeHoursStart[lineIndex]++;
   } else {
@@ -1432,7 +1512,6 @@ void incPumpTimeHoursStart(int lineIndex) { // sleep increese adjustment
   delay(350);
 }
 void decPumpTimeHoursStart(int lineIndex) { // sleep decreese adjustment
-  int h = 50;
   if (pumpTimeHoursStart[lineIndex] > 0) {
     pumpTimeHoursStart[lineIndex]--;
   } else {
@@ -1449,7 +1528,6 @@ void decPumpTimeHoursStart(int lineIndex) { // sleep decreese adjustment
 
 
 void incPumpTimeMinutesEnd(int lineIndex) { // sleep increese adjustment
-  int h = 50;
   if (pumpTimeMinutesEnd[lineIndex] < 59) {
     pumpTimeMinutesEnd[lineIndex]++;
   } else {
@@ -1462,7 +1540,6 @@ void incPumpTimeMinutesEnd(int lineIndex) { // sleep increese adjustment
   delay(350);
 }
 void decPumpTimeMinutesEnd(int lineIndex) { // sleep decreese adjustment
-  int h = 50;
   if (pumpTimeMinutesEnd[lineIndex] > 0) {
     pumpTimeMinutesEnd[lineIndex]--;
   } else {
@@ -1475,7 +1552,6 @@ void decPumpTimeMinutesEnd(int lineIndex) { // sleep decreese adjustment
   delay(350);
 }
 void incPumpTimeHoursEnd(int lineIndex) { // sleep increese adjustment
-  int h = 50;
   if (pumpTimeHoursEnd[lineIndex] < 23) {
     pumpTimeHoursEnd[lineIndex]++;
   } else {
@@ -1488,7 +1564,6 @@ void incPumpTimeHoursEnd(int lineIndex) { // sleep increese adjustment
   delay(350);
 }
 void decPumpTimeHoursEnd(int lineIndex) { // sleep decreese adjustment
-  int h = 50;
   if (pumpTimeHoursEnd[lineIndex] > 0) {
     pumpTimeHoursEnd[lineIndex]--;
   } else {
