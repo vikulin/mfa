@@ -139,9 +139,10 @@ byte pumpTimeMinutesStart[1] = {0};
 byte pumpTimeHoursEnd[1] = {0};
 byte pumpTimeMinutesEnd[1] = {0};
 
-byte pumpTimePeriod[1] = {0};
-
-byte pumpDuration[1] = {0};
+byte pumpDayTimePeriod[1] = {0};
+byte pumpDayDuration[1] = {0};
+byte pumpNightTimePeriod[1] = {0};
+byte pumpNightDuration[1] = {0};
 
 int tempC;
 int temp;
@@ -212,9 +213,12 @@ void setup(void) {
   pumpTimeHoursEnd[0] = (byte)EEPROM.read(18);
   pumpTimeMinutesEnd[0] = (byte)EEPROM.read(19);
 
-  pumpTimePeriod[0] = (byte)EEPROM.read(20);
+  pumpDayTimePeriod[0] = (byte)EEPROM.read(20);
+  pumpDayDuration[0] = (byte)EEPROM.read(21);
 
-  pumpDuration[0] = (byte)EEPROM.read(21);
+  pumpNightTimePeriod[0] = (byte)EEPROM.read(22);
+  pumpNightDuration[0] = (byte)EEPROM.read(23);
+
 
   Serial.begin(9600);
   Serial.println("MFA");
@@ -300,12 +304,14 @@ void checkLightSchedule(){
 void checkPumpSchedule(){
   for(int i=0;i<1;i++){
     int minutes = n_tme.Minute+n_tme.Hour*60;
-    int start = pumpTimeMinutesStart[i] + pumpTimeHoursStart[i]*60;
+    
     if(!selectedPump[i]){
+      int start = pumpTimeMinutesStart[i] + pumpTimeHoursStart[i]*60;
       if(minutes >= start && minutes<=pumpTimeMinutesEnd[i] + pumpTimeHoursEnd[i]*60){
-        //check period and duration
-        Serial.println((minutes - start) % (pumpTimePeriod[i] + pumpDuration[i]));
-        if((minutes - start) % (pumpTimePeriod[i] + pumpDuration[i])<pumpDuration[i]){
+        
+        //check daily period and duration
+        //Serial.println((minutes - start) % (pumpDayTimePeriod[i] + pumpDayDuration[i]));
+        if((minutes - start) % (pumpDayTimePeriod[i] + pumpDayDuration[i])<pumpDayDuration[i]){
           //turn on line
           digitalWrite(PIN_PUMP[i], LOW);
           activePump[i] = true;
@@ -314,8 +320,22 @@ void checkPumpSchedule(){
           activePump[i] = false;
         }
       } else {
-        digitalWrite(PIN_PUMP[i], HIGH);
-        activePump[i] = false;
+        start = pumpTimeMinutesEnd[i] + pumpTimeHoursEnd[i]*60;
+        //check nightly period and duration
+        //Serial.println((minutes - start) % (pumpDayTimePeriod[i] + pumpDayDuration[i]));
+        int delta = minutes - start;
+        //ABS is a fix for mightnight
+        if(abs(delta) % (pumpNightTimePeriod[i] + pumpNightDuration[i])<pumpNightDuration[i]){
+          //turn on line
+          digitalWrite(PIN_PUMP[i], LOW);
+          activePump[i] = true;
+        } else {
+          digitalWrite(PIN_PUMP[i], HIGH);
+          activePump[i] = false;
+        }
+        
+        //digitalWrite(PIN_PUMP[i], HIGH);
+        //activePump[i] = false;
       }
     }
   }
@@ -543,9 +563,12 @@ void loop() {
         EEPROM.write(17, (byte)pumpTimeMinutesStart[0]);
         EEPROM.write(18, (byte)pumpTimeHoursEnd[0]);
         EEPROM.write(19, (byte)pumpTimeMinutesEnd[0]);
-        EEPROM.write(20, (byte)pumpTimePeriod[0]);
-        EEPROM.write(21, (byte)pumpDuration[0]);
-        
+        EEPROM.write(20, (byte)pumpDayTimePeriod[0]);
+        EEPROM.write(21, (byte)pumpDayDuration[0]);
+
+        EEPROM.write(22, (byte)pumpNightTimePeriod[0]);
+        EEPROM.write(23, (byte)pumpNightDuration[0]);
+
         printMessage("Pump saved", YELLOW); // display settings saved in message box
         clearscheduleLightLine(); // erase all the drawings on the settings page
         resetPumpTest();
@@ -835,7 +858,7 @@ void loop() {
       if (page == 9) {
         for(int i=0;i<1;i++){
           if(selectedPump[i]){
-            decPumpTimePeriod(i);
+            decPumpDayTimePeriod(i);
             break;
           }
         }
@@ -852,6 +875,15 @@ void loop() {
       }
     }
     if (p.y > 60 && p.y < 120 && p.x > 120 && p.x < 150) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            incPumpDayTimePeriod(i);
+            break;
+          }
+        }
+      }
       //Clock setting
       if(page==5){
         //increase Hour
@@ -864,6 +896,15 @@ void loop() {
       }
     }
     if (p.y > 200 && p.y < 260 && p.x > 120 && p.x < 150) {
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            decPumpDayDuration(i);
+            break;
+          }
+        }
+      }
       //Clock setting
       if(page==5){
         //increase Minutes
@@ -876,11 +917,12 @@ void loop() {
       }
     }
     if (p.y > 260 && p.y < 320 && p.x > 120 && p.x < 150) {
+      //inc pump duration
       // PumpTime buttons
       if (page == 9) {
         for(int i=0;i<1;i++){
           if(selectedPump[i]){
-            incPumpTimePeriod(i);
+            incPumpDayDuration(i);
             break;
           }
         }
@@ -896,23 +938,50 @@ void loop() {
         showClockMinutes(clock_tme.Minute);
       }
     }
-    if (p.y > 260 && p.y < 320 && p.x > 90 && p.x < 120) {
+
+
+
+
+      if (p.y > 0 && p.y < 60 && p.x > 90 && p.x < 120) {
+        // PumpTime buttons
+        if (page == 9) {
+          for(int i=0;i<1;i++){
+            if(selectedPump[i]){
+              decPumpNightTimePeriod(i);
+              break;
+            }
+          }
+        }
+      }
+      if (p.y > 60 && p.y < 120 && p.x > 90 && p.x < 120) {
       // PumpTime buttons
       if (page == 9) {
         for(int i=0;i<1;i++){
           if(selectedPump[i]){
-            incPumpDuration(i);
+            incPumpNightTimePeriod(i);
             break;
           }
         }
       }
     }
-    if (p.y > 0 && p.y < 60 && p.x > 90 && p.x < 120) {
+    if (p.y > 200 && p.y < 260 && p.x > 90 && p.x < 120) {
       // PumpTime buttons
       if (page == 9) {
         for(int i=0;i<1;i++){
           if(selectedPump[i]){
-            decPumpDuration(i);
+            decPumpNightDuration(i);
+            break;
+          }
+        }
+      }
+    }
+    if (p.y > 260 && p.y < 320 && p.x > 90 && p.x < 120) {
+      //inc pump duration
+      // PumpTime buttons
+      if (page == 9) {
+        for(int i=0;i<1;i++){
+          if(selectedPump[i]){
+            incPumpNightDuration(i);
             break;
           }
         }
@@ -1224,9 +1293,13 @@ void schedulePump(int pumpIndex) {
   button("+", 260, 55, w, h, WHITE, 22, 5, GREEN);
 
   button("-", 0, 90, w, h, WHITE, 22, 5, RED);
+  button("+", 60, 90, w, h, WHITE, 22, 5, GREEN);
+  button("-", 200, 90, w, h, WHITE, 22, 5, RED);
   button("+", 260, 90, w, h, WHITE, 22, 5, GREEN);
 
   button("-", 0, 125, w, h, WHITE, 22, 5, RED);
+  button("+", 60, 125, w, h, WHITE, 22, 5, GREEN);
+  button("-", 200, 125, w, h, WHITE, 22, 5, RED);
   button("+", 260, 125, w, h, WHITE, 22, 5, GREEN);
 
   tft.drawRect(120, 20, 80, 30, JJCOLOR);
@@ -1239,8 +1312,11 @@ void schedulePump(int pumpIndex) {
   showPumpTimeHoursEnd(pumpTimeHoursEnd[pumpIndex]);
   showPumpTimeMinutesEnd(pumpTimeMinutesEnd[pumpIndex]);
 
-  showPumpTimePeriod(pumpTimePeriod[pumpIndex]);
-  showPumpDuration(pumpDuration[pumpIndex]);
+  showPumpDayTimePeriod(pumpDayTimePeriod[pumpIndex]);
+  showPumpDayDuration(pumpDayDuration[pumpIndex]);
+
+  showPumpNightTimePeriod(pumpNightTimePeriod[pumpIndex]);
+  showPumpNightDuration(pumpNightDuration[pumpIndex]);
 }
 
 void showClockYear(int yearDate) {
@@ -1265,20 +1341,6 @@ void showClockDay(int dayDate) {
   tft.setCursor(165, 65);
   tft.print(conv_num2char(dayDate));
 }
-void showPumpTimePeriod(int period){
-  tft.fillRect(123, 95, 70, 20, GRAY);
-  tft.setTextSize(2);
-  tft.setTextColor(WHITE);
-  tft.setCursor(128, 100);
-  tft.print(period);
-}
-void showPumpDuration(int duration){
-  tft.fillRect(123, 130, 70, 20, GRAY);
-  tft.setTextSize(2);
-  tft.setTextColor(WHITE);
-  tft.setCursor(128, 135);
-  tft.print(duration);
-}
 void showClockHour(int hourDate) {
   tft.fillRect(123, 95, 30, 20, GRAY);
   tft.setTextSize(2);
@@ -1293,6 +1355,35 @@ void showClockMinutes(int minutesDate) {
   tft.setTextColor(WHITE);
   tft.setCursor(165, 100);
   tft.print(conv_num2char(minutesDate));
+}
+
+void showPumpDayTimePeriod(int period){
+  tft.fillRect(123, 95, 30, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(128, 100);
+  tft.print(period);
+}
+void showPumpDayDuration(int duration){
+  tft.fillRect(165, 95, 30, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(165, 100);
+  tft.print(duration);
+}
+void showPumpNightTimePeriod(int period){
+  tft.fillRect(123, 130, 40, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(123, 135);
+  tft.print(period);
+}
+void showPumpNightDuration(int duration){
+  tft.fillRect(165, 130, 30, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(165, 135);
+  tft.print(duration);
 }
 
 void showLightTimeHoursStart(int lightTimeH) {
@@ -1349,27 +1440,52 @@ void showPumpTimeMinutesEnd(int pumpTimeM) {
   showLightTimeMinutesEnd(pumpTimeM);
 }
 
-void decPumpTimePeriod(int pumpIndex){
-  pumpTimePeriod[pumpIndex]--;
-  showPumpTimePeriod(pumpTimePeriod[pumpIndex]);
+void decPumpDayTimePeriod(int pumpIndex){
+  pumpDayTimePeriod[pumpIndex]--;
+  showPumpDayTimePeriod(pumpDayTimePeriod[pumpIndex]);
   delay(350);
 }
 
-void incPumpTimePeriod(int pumpIndex){
-  pumpTimePeriod[pumpIndex]++;
-  showPumpTimePeriod(pumpTimePeriod[pumpIndex]);
+void incPumpDayTimePeriod(int pumpIndex){
+  pumpDayTimePeriod[pumpIndex]++;
+  showPumpDayTimePeriod(pumpDayTimePeriod[pumpIndex]);
   delay(350);
 }
 
-void decPumpDuration(int pumpIndex){
-  pumpDuration[pumpIndex]--;
-  showPumpDuration(pumpDuration[pumpIndex]);
+void decPumpDayDuration(int pumpIndex){
+  pumpDayDuration[pumpIndex]--;
+  showPumpDayDuration(pumpDayDuration[pumpIndex]);
   delay(350);
 }
 
-void incPumpDuration(int pumpIndex){
-  pumpDuration[pumpIndex]++;
-  showPumpDuration(pumpDuration[pumpIndex]);
+void incPumpDayDuration(int pumpIndex){
+  pumpDayDuration[pumpIndex]++;
+  showPumpDayDuration(pumpDayDuration[pumpIndex]);
+  delay(350);
+}
+
+
+void decPumpNightTimePeriod(int pumpIndex){
+  pumpNightTimePeriod[pumpIndex]--;
+  showPumpNightTimePeriod(pumpNightTimePeriod[pumpIndex]);
+  delay(350);
+}
+
+void incPumpNightTimePeriod(int pumpIndex){
+  pumpNightTimePeriod[pumpIndex]++;
+  showPumpNightTimePeriod(pumpNightTimePeriod[pumpIndex]);
+  delay(350);
+}
+
+void decPumpNightDuration(int pumpIndex){
+  pumpNightDuration[pumpIndex]--;
+  showPumpNightDuration(pumpNightDuration[pumpIndex]);
+  delay(350);
+}
+
+void incPumpNightDuration(int pumpIndex){
+  pumpNightDuration[pumpIndex]++;
+  showPumpNightDuration(pumpNightDuration[pumpIndex]);
   delay(350);
 }
 
