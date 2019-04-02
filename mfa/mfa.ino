@@ -59,6 +59,12 @@ byte PIN_LIGHT_LINE[4] = {PIN_LIGHT_LINE_1, PIN_LIGHT_LINE_2, PIN_LIGHT_LINE_3, 
 #define PIN_PUMP_1 44
 
 byte PIN_PUMP[1] = {PIN_PUMP_1};
+/**
+ * Heater pin
+ */
+#define PIN_HEATER_1 42
+
+byte PIN_HEATER[1] = {PIN_HEATER_1};
 
 #define LCD_CS A3 // Chip Select goes to Analog 3
 #define LCD_CD A2 // Command/Data goes to Analog 2
@@ -117,17 +123,29 @@ boolean selectedLightLine[4] = {false,false,false,false};
  */
 boolean activePump[1] = {false};
 /**
- * Pump active
+ * Pump selected
  */
 boolean selectedPump[1] = {false};
+/**
+ * Heater active
+ */
+boolean activeHeater[1] = {false};
+/**
+ * Heater selected
+ */
+boolean selectedHeater[1] = {false};
 /**
  * Test light active flag
  */
 boolean activeLightTest = false;
 /**
- * Test light active flag
+ * Test pump active flag
  */
 boolean activePumpTest = false;
+/**
+ * Test heater active flag
+ */
+boolean activeHeaterTest = false;
 
 byte lightTimeHoursStart[4] = {0,0,0,0};
 byte lightTimeMinutesStart[4] = {0,0,0,0};
@@ -143,6 +161,9 @@ byte pumpDayTimePeriod[1] = {0};
 byte pumpDayDuration[1] = {0};
 byte pumpNightTimePeriod[1] = {0};
 byte pumpNightDuration[1] = {0};
+
+byte heaterNightTemperature[1] = {0};
+byte heaterDayTemperature[1] = {0};
 
 int tempC;
 int temp;
@@ -219,6 +240,8 @@ void setup(void) {
   pumpNightTimePeriod[0] = (byte)EEPROM.read(22);
   pumpNightDuration[0] = (byte)EEPROM.read(23);
 
+  heaterNightTemperature[0] = (byte)EEPROM.read(24);
+  heaterDayTemperature[0] = (byte)EEPROM.read(25);
 
   Serial.begin(9600);
   Serial.println("MFA");
@@ -282,13 +305,41 @@ void setup(void) {
   //run scheduleLightLined light lines
   checkLightSchedule();
   checkPumpSchedule();
+  checkTemperature();
   //beep(100);
+}
+
+void checkTemperature(){
+    for(int i=0;i<1;i++){
+    if(!selectedHeater[i]){
+      int minutes = n_tme.Minute+n_tme.Hour*60;
+      if(minutes>=lightTimeMinutesStart[i] + lightTimeHoursStart[i]*60 && minutes<=lightTimeMinutesEnd[i] + lightTimeHoursEnd[i]*60){
+        //check day time temperature
+        if(temp/100<heaterDayTemperature[i]){
+          digitalWrite(PIN_HEATER[i], LOW);
+          activeHeater[i] = true;
+        } else {
+          digitalWrite(PIN_HEATER[i], HIGH);
+          activeHeater[i] = false;
+        }
+      } else {
+        //check night time temperature
+        if(temp/100<heaterNightTemperature[i]){
+          digitalWrite(PIN_HEATER[i], LOW);
+          activeHeater[i] = true;
+        } else {
+          digitalWrite(PIN_HEATER[i], HIGH);
+          activeHeater[i] = false;
+        }
+      }
+    }
+  }
 }
 
 void checkLightSchedule(){
   for(int i=0;i<4;i++){
-    int minutes = n_tme.Minute+n_tme.Hour*60;
     if(!selectedLightLine[i]){
+      int minutes = n_tme.Minute+n_tme.Hour*60;
       if(minutes>=lightTimeMinutesStart[i] + lightTimeHoursStart[i]*60 && minutes<=lightTimeMinutesEnd[i] + lightTimeHoursEnd[i]*60){
         //turn on line
         digitalWrite(PIN_LIGHT_LINE[i], LOW);
@@ -303,9 +354,8 @@ void checkLightSchedule(){
 
 void checkPumpSchedule(){
   for(int i=0;i<1;i++){
-    int minutes = n_tme.Minute+n_tme.Hour*60;
-    
     if(!selectedPump[i]){
+      int minutes = n_tme.Minute+n_tme.Hour*60;
       int start = pumpTimeMinutesStart[i] + pumpTimeHoursStart[i]*60;
       if(minutes >= start && minutes<=pumpTimeMinutesEnd[i] + pumpTimeHoursEnd[i]*60){
         
@@ -348,7 +398,7 @@ void printInitialTime(){
 }
 
 void printTime(){
-        // date change
+    // date change
     DS3231.read(n_tme);
     if (o_tme.Day != n_tme.Day || o_tme.Month != n_tme.Month || o_tme.Year != n_tme.Year)
     {
@@ -558,6 +608,10 @@ void loop() {
     // home
     if (p.y > 280 && p.y < 340 && p.x > 0 && p.x < 48) { // if the home icon is pressed
       Serial.println("page="+String(page));
+      if (page==10){
+        EEPROM.write(24, (byte)heaterNightTemperature[0]);
+        EEPROM.write(25, (byte)heaterDayTemperature[0]);
+      }
       if (page == 9){
         EEPROM.write(16, (byte)pumpTimeHoursStart[0]);
         EEPROM.write(17, (byte)pumpTimeMinutesStart[0]);
