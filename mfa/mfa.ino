@@ -476,7 +476,7 @@ void loop() {
         m4b1action();
       }
       if (page == 3) {
-        m3b1action();
+        showHeaterButton();
       }
       if (page == 2) {
         showMainPumpButton();
@@ -568,7 +568,7 @@ void loop() {
         clearmessage();
       }
       if (page == 3) {
-        m3b5action();
+        startHeaterTest();
       }
       if (page == 2) {
         startPumpTest();
@@ -612,6 +612,11 @@ void loop() {
       if (page==10){
         EEPROM.write(24, (byte)heaterNightTemperature[0]);
         EEPROM.write(25, (byte)heaterDayTemperature[0]);
+        printMessage("Heater saved", YELLOW); // display settings saved in message box
+        clearscheduleLightLine(); // erase all the drawings on the settings page
+        resetHeaterTest();
+        printInitialTime();
+        printTemperature(sensorAddress, true);
       }
       if (page == 9){
         EEPROM.write(16, (byte)pumpTimeHoursStart[0]);
@@ -1993,6 +1998,21 @@ void showMainPumpButton() {
   }
 }
 
+void showHeaterButton() {
+  int w = 150;
+  int h = 50;
+  selectedHeater[0]=!selectedHeater[0];
+  if(selectedHeater[0]){
+    button("Heater", 0, 20, w, h, JJCOLOR, 22, 17, GREEN);
+  } else {
+    if(activePump[0]){
+      button("Heater", 0, 20, w, h, JJCOLOR, 22, 17, JJORNG);
+    } else {
+      button("Heater", 0, 20, w, h, JJCOLOR, 22, 17, BLACK);
+    }
+  }
+}
+
 void m2b2action() {
 }
 void m2b3action() {
@@ -2021,11 +2041,32 @@ void startPumpTest() {
     }
     button("Test", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
   }
- 
 }
 
-void m3b1action() {
+void startHeaterTest() {
+  //Heater test
+  int w = 150;
+  int h = 50;
+  activeHeaterTest = !activeHeaterTest;
+  if(activeHeaterTest && selectedHeater[0]){
+      for(int i=0;i<1;i++){
+        if(selectedHeater[i]){
+          digitalWrite(PIN_HEATER[i], LOW);
+        }
+      }
+      button("Test", 0, 140, w, h, JJCOLOR, 22, 17, GREEN);
+  } else {
+    if(selectedHeater[0]){
+      for(int i=0;i<1;i++){
+        if(selectedHeater[i]){
+          digitalWrite(PIN_HEATER[i], HIGH);
+        }
+      }      
+    }
+    button("Test", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
+  }
 }
+
 void m3b2action() {
 }
 void m3b3action() {
@@ -2244,4 +2285,11 @@ void resetLightTest(){
 void resetPumpTest(){
   activePumpTest = false;
   selectedPump[0]=false;
+}
+/**
+ * Reset test values
+ */
+void resetHeaterTest(){
+  activeHeaterTest = false;
+  selectedHeater[0]=false;
 }
