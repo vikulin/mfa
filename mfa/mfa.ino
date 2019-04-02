@@ -99,7 +99,7 @@ TME clock_tme;
 #define TEST            0x1BF5
 #define JJCOLOR         0x1CB6
 #define JJORNG          0xFD03
-#define GRAY          0x8410
+#define GRAY            0x8410
 
 int i = 0;
 int page = 0;
@@ -590,7 +590,8 @@ void loop() {
         m4b6action();
       }
       if (page == 3) {
-        m3b6action();
+        showHeaterThermostat();
+        printInitialTime();
       }
       if (page == 2) {
         showPumpSchedule();
@@ -684,6 +685,15 @@ void loop() {
     }
     
     if (p.y > 0 && p.y < 60 && p.x > 180 && p.x < 210) {
+      // Heater buttons
+      if (page == 10) {
+        for(int i=0;i<1;i++){
+          if(selectedHeater[i]){
+            decDayTemperature(i);
+            break;
+          }
+        }
+      }
       // PumpTime buttons
       if (page == 9) {
         for(int i=0;i<1;i++){
@@ -754,6 +764,15 @@ void loop() {
       }
     }
     if (p.y > 260 && p.y < 320 && p.x > 180 && p.x < 210) {
+      // Heater buttons
+      if (page == 10) {
+        for(int i=0;i<1;i++){
+          if(selectedHeater[i]){
+            incDayTemperature(i);
+            break;
+          }
+        }
+      }
       // LightTime buttons
       if (page == 9) {
         for(int i=0;i<1;i++){
@@ -785,6 +804,15 @@ void loop() {
     }
     
     if (p.y > 0 && p.y < 60 && p.x > 150 && p.x < 180) {
+      // Heater buttons
+      if (page == 10) {
+        for(int i=0;i<1;i++){
+          if(selectedHeater[i]){
+            decNightTemperature(i);
+            break;
+          }
+        }
+      }
       // PumpTime buttons
       if (page == 9) {
          for(int i=0;i<1;i++){
@@ -877,6 +905,15 @@ void loop() {
     }
 
    if (p.y > 260 && p.y < 320 && p.x > 150 && p.x < 180) {
+      // Heater buttons
+      if (page == 10) {
+        for(int i=0;i<1;i++){
+          if(selectedHeater[i]){
+            incNightTemperature(i);
+            break;
+          }
+        }
+      }
       // PumpTime buttons
       if (page == 9) {
         for(int i=0;i<1;i++){
@@ -1997,8 +2034,7 @@ void m3b4action() {
 }
 void m3b5action() {
 }
-void m3b6action() {
-}
+
 void m4b1action() {
 }
 void m4b2action() {
