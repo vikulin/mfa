@@ -1230,12 +1230,12 @@ void menu3() {
   tft.setTextSize(2);
   int w = 150;
   int h = 50;
-  button("Menu 3 B1", 0, 20, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 3 B2", 170, 20, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 3 B3", 0, 80, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 3 B4", 170, 80, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 3 B5", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
-  button("Menu 3 B6", 170, 140, w, h, JJCOLOR, 22, 17, BLACK);
+  button("Heater", 0, 20, w, h, JJCOLOR, 22, 17, BLACK);
+  button("--", 170, 20, w, h, JJCOLOR, 22, 17, BLACK);
+  button("--", 0, 80, w, h, JJCOLOR, 22, 17, BLACK);
+  button("--", 170, 80, w, h, JJCOLOR, 22, 17, BLACK);
+  button("Test", 0, 140, w, h, JJCOLOR, 22, 17, BLACK);
+  button("Thermostat", 170, 140, w, h, JJCOLOR, 22, 17, BLACK);
 }
 void menu4() {
   tft.setTextColor(WHITE);
@@ -1373,6 +1373,32 @@ void schedulePump(int pumpIndex) {
   showPumpNightDuration(pumpNightDuration[pumpIndex]);
 }
 
+
+
+void editThermostat(int heaterIndex) {
+  tft.setTextColor(WHITE);
+  
+  int w = 60;
+  int h = 30;
+
+  tft.setTextSize(3);
+  button("-", 0, 20, w, h, WHITE, 22, 5, RED);
+  
+  button("+", 260, 20, w, h, WHITE, 22, 5, GREEN);
+
+  button("-", 0, 55, w, h, WHITE, 22, 5, RED);
+  
+  button("+", 260, 55, w, h, WHITE, 22, 5, GREEN);
+  
+  tft.drawRect(120, 20, 80, 30, JJCOLOR);
+  tft.drawRect(120, 55, 80, 30, JJCOLOR);
+
+  showDayTemperature(heaterDayTemperature[heaterIndex]);
+  showNightTemperature(heaterNightTemperature[heaterIndex]);
+}
+
+
+
 void showClockYear(int yearDate) {
   tft.fillRect(123, 25, 70, 20, GRAY);
   tft.setTextSize(2);
@@ -1493,6 +1519,50 @@ void showPumpTimeMinutesStart(int pumpTimeM) {
 void showPumpTimeMinutesEnd(int pumpTimeM) {
   showLightTimeMinutesEnd(pumpTimeM);
 }
+
+
+void showDayTemperature(int temp){
+  tft.fillRect(123, 25, 70, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(128, 30);
+  tft.print(temp);
+}
+
+void showNightTemperature(int temp){
+  tft.fillRect(123, 60, 70, 20, GRAY);
+  tft.setTextSize(2);
+  tft.setTextColor(WHITE);
+  tft.setCursor(128, 65);
+  tft.print(temp);
+}
+
+void decDayTemperature(int heaterIndex){
+  heaterDayTemperature[heaterIndex]--;
+  showDayTemperature(heaterDayTemperature[heaterIndex]);
+  delay(350);
+}
+
+void incDayTemperature(int heaterIndex){
+  heaterDayTemperature[heaterIndex]++;
+  showDayTemperature(heaterDayTemperature[heaterIndex]);
+  delay(350);
+}
+
+void decNightTemperature(int heaterIndex){
+  heaterNightTemperature[heaterIndex]--;
+  showNightTemperature(heaterNightTemperature[heaterIndex]);
+  delay(350);
+}
+
+void incNightTemperature(int heaterIndex){
+  heaterNightTemperature[heaterIndex]++;
+  showNightTemperature(heaterNightTemperature[heaterIndex]);
+  delay(350);
+}
+
+
+
 
 void decPumpDayTimePeriod(int pumpIndex){
   pumpDayTimePeriod[pumpIndex]--;
@@ -1858,6 +1928,19 @@ void showPumpSchedule() {
     }
   }
 }
+
+void showHeaterThermostat() {
+  //Heater Thermostat
+  for(int i=0;i<1;i++){
+    if(selectedHeater[i]){
+      page=10;
+      clearscheduleLightLine();
+      editThermostat(i);
+      break;
+    }
+  }
+}
+
 void showMainPumpButton() {
   int w = 150;
   int h = 50;
