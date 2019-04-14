@@ -1442,14 +1442,14 @@ void editThermostat(int heaterIndex) {
 
 
 void showClockYear(int yearDate) {
-  tft.fillRect(123, 25, 70, 20, GRAY);
+  tft.fillRect(123, 25, 70, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(128, 30);
   tft.print(String(yearDate+1970));
 }
 void showClockMonth(int monthDate) {
-  tft.fillRect(123, 60, 30, 20, GRAY);
+  tft.fillRect(123, 60, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(128, 65);
@@ -1457,14 +1457,14 @@ void showClockMonth(int monthDate) {
   tft.print("-");
 }
 void showClockDay(int dayDate) {
-  tft.fillRect(165, 60, 30, 20, GRAY);
+  tft.fillRect(165, 60, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(165, 65);
   tft.print(conv_num2char(dayDate));
 }
 void showClockHour(int hourDate) {
-  tft.fillRect(123, 95, 30, 20, GRAY);
+  tft.fillRect(123, 95, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(128, 100);
@@ -1472,7 +1472,7 @@ void showClockHour(int hourDate) {
   tft.print(":");
 }
 void showClockMinutes(int minutesDate) {
-  tft.fillRect(165, 95, 30, 20, GRAY);
+  tft.fillRect(165, 95, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(165, 100);
@@ -1480,28 +1480,28 @@ void showClockMinutes(int minutesDate) {
 }
 
 void showPumpDayTimePeriod(int period){
-  tft.fillRect(123, 95, 30, 20, GRAY);
+  tft.fillRect(123, 95, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(128, 100);
   tft.print(period);
 }
 void showPumpDayDuration(int duration){
-  tft.fillRect(165, 95, 30, 20, GRAY);
+  tft.fillRect(165, 95, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(165, 100);
   tft.print(duration);
 }
 void showPumpNightTimePeriod(int period){
-  tft.fillRect(123, 130, 40, 20, GRAY);
+  tft.fillRect(123, 130, 40, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(123, 135);
   tft.print(period);
 }
 void showPumpNightDuration(int duration){
-  tft.fillRect(165, 130, 30, 20, GRAY);
+  tft.fillRect(165, 130, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(165, 135);
@@ -1509,7 +1509,7 @@ void showPumpNightDuration(int duration){
 }
 
 void showLightTimeHoursStart(int lightTimeH) {
-  tft.fillRect(123, 25, 30, 20, GRAY);
+  tft.fillRect(123, 25, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   if(lightTimeH>9){
@@ -1522,7 +1522,7 @@ void showLightTimeHoursStart(int lightTimeH) {
 }
 
 void showLightTimeMinutesStart(int lightTimeM) {
-  tft.fillRect(168, 25, 30, 20, GRAY);
+  tft.fillRect(168, 25, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(170, 30);
@@ -1530,7 +1530,7 @@ void showLightTimeMinutesStart(int lightTimeM) {
 }
 
 void showLightTimeHoursEnd(int lightTimeH) {
-  tft.fillRect(123, 60, 30, 20, GRAY);
+  tft.fillRect(123, 60, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   if(lightTimeH>9){
@@ -1542,7 +1542,7 @@ void showLightTimeHoursEnd(int lightTimeH) {
   tft.print(":");
 }
 void showLightTimeMinutesEnd(int lightTimeM) {
-  tft.fillRect(168, 60, 30, 20, GRAY);
+  tft.fillRect(168, 60, 30, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(170, 65);
@@ -1564,7 +1564,7 @@ void showPumpTimeMinutesEnd(int pumpTimeM) {
 
 
 void showDayTemperature(int temp){
-  tft.fillRect(123, 25, 70, 20, GRAY);
+  tft.fillRect(123, 25, 70, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(128, 30);
@@ -1572,7 +1572,7 @@ void showDayTemperature(int temp){
 }
 
 void showNightTemperature(int temp){
-  tft.fillRect(123, 60, 70, 20, GRAY);
+  tft.fillRect(123, 60, 70, 20, BLACK);
   tft.setTextSize(2);
   tft.setTextColor(WHITE);
   tft.setCursor(128, 65);
@@ -2237,7 +2237,7 @@ void drawbatt() {
 void myTone(uint8_t i, uint32_t j, uint32_t k){  // Определяем функцию myTone
   j=500000/j;                                    // Меняем значение переменной j на время одного полупериода в мкс
   k+=millis();                                   // Меняем значение переменной к на время завершения вывода сигнала
-  pinMode(i,  OUTPUT  );               // Переводим вывод PIN_BUZZER в режим выхода
+  pinMode(i,  OUTPUT  );                         // Переводим вывод PIN_BUZZER в режим выхода
   while(k>millis()){                             // Выводим сигнал, пока не истечёт указанное время
     digitalWrite(i, HIGH); delayMicroseconds(j); // Устанавливаем на выходе i уровень логической  «1» на время j
     digitalWrite(i, LOW ); delayMicroseconds(j); // Устанавливаем на выходе i уровень логического «0» на время j
